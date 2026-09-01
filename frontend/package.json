@@ -1,0 +1,38 @@
+{
+  "name": "gestor-compras-web-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "validate:contingency-detail": "node scripts/validate-contingency-detail.mjs",
+    "validate:detail": "node scripts/validate-detail.mjs",
+    "validate:detail-interface": "node scripts/validate-detail-interface.mjs",
+    "validate:period": "node scripts/validate-period.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "es-toolkit": "^1.52.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-is": "^19.2.4",
+    "react-router-dom": "^7.18.2",
+    "recharts": "^3.10.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.36.0",
+    "@types/react": "19.1.16",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.4",
+    "eslint": "9.36.0",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-react-refresh": "0.4.22",
+    "globals": "16.4.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.45.0",
+    "vite": "7.3.6"
+  }
+}
