@@ -148,7 +148,7 @@ def test_commitments_are_aggregated_by_nature_in_one_query(
     assert "ORDER BY SZN.ZN_NATUREZ" in normalized_query
     assert records == [
         PcAbertoRecord("B", Decimal("25.50")),
-        PcAbertoRecord("A", Decimal("100.1250")),
+        PcAbertoRecord("A", Decimal("100.13")),
     ]
     assert all(isinstance(record.valor, Decimal) for record in records)
 
@@ -229,10 +229,28 @@ def test_detail_reuses_open_order_filters_and_is_parameterized(
     assert "OUTER APPLY" in sql
     assert "SC7_SUPPLIER.C7_FORNECE" in sql
     assert "SA2_SUPPLIER.A2_NOME" in sql
+    assert "LEFT JOIN SA2010 AS SA2_SUPPLIER" in sql
     assert "SUM(" not in sql and "GROUP BY" not in sql
     assert cursor.parameters == ("0101", "202509%", " ", "4.000-010")
     assert records == [
         PcAbertoDetailRecord("000123", "20250920", "4.000-010", Decimal("125.50"), "000001", "Fornecedor Teste")
+    ]
+
+
+def test_detail_keeps_order_when_supplier_name_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_fake_connection(
+        monkeypatch,
+        [("000124", "20250921", "4.000-010", Decimal("75.50"), "000999", None)],  # type: ignore[list-item]
+    )
+
+    records = PcAbertoRepository(repository_settings()).list_pc_aberto_details(
+        "0101", 2025, 9, "4.000-010"
+    )
+
+    assert records == [
+        PcAbertoDetailRecord("000124", "20250921", "4.000-010", Decimal("75.50"), "000999", "")
     ]
 
 

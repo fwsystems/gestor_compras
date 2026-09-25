@@ -324,6 +324,27 @@ def test_pc_detail_matches_consolidated_and_uses_catalog_description() -> None:
     assert repositories["nf"].calls == []
 
 
+def test_pc_detail_precision_and_missing_supplier_do_not_break_consistency() -> None:
+    service, repositories = build_service(
+        naturezas=[NaturezaRecord("001", "NATUREZA TESTE")],
+        pcs=[PcAbertoRecord("001", Decimal("20693.14"))],
+    )
+    repositories["pc"].detail_records = [
+        PcAbertoDetailRecord("10", "20251010", "001", Decimal("12000.00"), "000001", ""),
+        PcAbertoDetailRecord("11", "20251020", "001", Decimal("8693.14"), "000002", ""),
+    ]
+
+    response = service.get_details(
+        ambiente=GestorDataEnvironment.PRD,
+        filial="0101", ano=2026, mes=10, natureza="001",
+        tipo=GestorDetailType.PC_ABERTO,
+    )
+
+    assert response.total == Decimal("20693.14")
+    assert sum((record.valor for record in response.registros), Decimal("0")) == response.total
+    assert [record.model_dump(by_alias=True)["fornecedorNome"] for record in response.registros] == ["", ""]
+
+
 def test_nf_detail_exposes_enriched_confirmed_fields() -> None:
     service, repositories = build_service(
         naturezas=[NaturezaRecord("001", "NATUREZA TESTE")],

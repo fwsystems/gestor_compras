@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from datetime import date
 
 from app.core.config import Settings, get_settings
@@ -8,6 +8,7 @@ from app.core.database import get_database_connection
 from app.core.protheus_tables import get_protheus_table_name
 
 logger = logging.getLogger(__name__)
+MONEY_QUANTUM = Decimal("0.01")
 
 
 @dataclass(frozen=True)
@@ -36,10 +37,12 @@ def _validate_period(ano: int, mes: int) -> str:
 
 def _to_decimal(value: object) -> Decimal:
     if value is None:
-        return Decimal("0")
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
+        decimal_value = Decimal("0")
+    elif isinstance(value, Decimal):
+        decimal_value = value
+    else:
+        decimal_value = Decimal(str(value))
+    return decimal_value.quantize(MONEY_QUANTUM, rounding=ROUND_HALF_UP)
 
 
 class PcAbertoRepository:

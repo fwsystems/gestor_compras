@@ -121,6 +121,10 @@ Saldo real     = (e) - (b)
 
 `(c) Contingência OK` continua visível e detalhável, mas não compõe mais nenhum cálculo financeiro de referência.
 
+### Correção funcional — consistência do detalhe de PC aberto
+
+O detalhe de PC aberto passou a normalizar valores monetários do repository para centavos com arredondamento financeiro. Isso elimina divergências artificiais entre agregados recebidos como `FLOAT` pelo driver SQL Server e a soma das linhas do detalhe. O enriquecimento SC7/SA2 permanece opcional (`LEFT JOIN` dentro de `OUTER APPLY`): fornecedor sem nome não elimina o pedido, e a interface usa o código do fornecedor ou `—` como fallback.
+
 ## 8. Estado da homologação
 
 - ET-013 a ET-019: infraestrutura SQL, cinco repositories e serviço consolidado concluídos.
