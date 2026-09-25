@@ -23,8 +23,7 @@ def test_service_rows_keep_financial_formulas_consistent() -> None:
     for month in (8, 9, 10):
         response = get_gestor(ano=2025, mes=month, filial="0101")
         for row in response.linhas:
-            assert row.limite_total == row.limite_original + row.contingencia_ok
             assert row.saldo_previsto == (
-                row.limite_total - row.pc_aberto - row.nf_entrada
+                row.limite_original - row.pc_aberto - row.nf_entrada
             )
-            assert row.saldo_real == row.limite_total - row.nf_entrada
+            assert row.saldo_real == row.limite_original - row.nf_entrada

@@ -6,7 +6,6 @@ export interface GestorRow {
   contingenciaOk: number
   contingenciaEmAprovacao: number
   limiteOriginal: number
-  limiteTotal: number
   saldoPrevisto: number
   saldoReal: number
 }
@@ -26,7 +25,7 @@ export interface GestorResponse {
 export interface GestorTimelinePoint {
   ano: number
   mes: number
-  limiteTotal: number
+  limiteOriginal: number
   nfEntrada: number
   saldoPrevisto: number
 }
@@ -39,6 +38,8 @@ export type GestorDetailType =
 
 export interface GestorPcAbertoDetailRecord {
   pedido: string
+  fornecedor: string
+  fornecedorNome: string
   vencimento: string
   valor: number
 }

@@ -89,7 +89,7 @@ def test_timeline_returns_one_month_per_point_and_matches_monthly_gestor() -> No
         "/api/gestor",
         params={"ano": 2025, "mes": 9, "filial": "0101", "ambiente": "dev"},
     ).json()
-    assert points[-1]["limiteTotal"] == sum(row["limiteTotal"] for row in monthly["linhas"])
+    assert points[-1]["limiteOriginal"] == sum(row["limiteOriginal"] for row in monthly["linhas"])
     assert points[-1]["nfEntrada"] == sum(row["nfEntrada"] for row in monthly["linhas"])
     assert points[-1]["saldoPrevisto"] == sum(row["saldoPrevisto"] for row in monthly["linhas"])
 
@@ -192,18 +192,16 @@ def test_gestor_public_json_and_known_calculations() -> None:
         "contingenciaOk",
         "contingenciaEmAprovacao",
         "limiteOriginal",
-        "limiteTotal",
         "saldoPrevisto",
         "saldoReal",
     }
 
     assert set(row) == expected_keys
     assert payload["quantidade"] == len(payload["linhas"])
-    assert row["limiteTotal"] == row["limiteOriginal"] + row["contingenciaOk"]
     assert row["saldoPrevisto"] == (
-        row["limiteTotal"] - row["pcAberto"] - row["nfEntrada"]
+        row["limiteOriginal"] - row["pcAberto"] - row["nfEntrada"]
     )
-    assert row["saldoReal"] == row["limiteTotal"] - row["nfEntrada"]
+    assert row["saldoReal"] == row["limiteOriginal"] - row["nfEntrada"]
     assert row["saldoPrevisto"] < 0
     assert all(
         isinstance(row[field], (int, float))
@@ -227,7 +225,7 @@ def test_gestor_preserves_exactly_committed_reference_row() -> None:
         if item["naturezaCodigo"] == "4.000-030"
     )
 
-    assert row["pcAberto"] + row["nfEntrada"] == row["limiteTotal"]
+    assert row["pcAberto"] + row["nfEntrada"] == row["limiteOriginal"]
     assert row["saldoPrevisto"] == 0
 
 
@@ -490,6 +488,10 @@ def test_dev_detail_matches_consolidated_total(
         assert record["fornecedor"] == "000001"
         assert record["fornecedorNome"] == "Fornecedor Exemplo DEV"
         assert record["emissao"] == "20250905"
+    if tipo == "pc_aberto" and payload["registros"]:
+        record = payload["registros"][0]
+        assert record["fornecedor"] == "000001"
+        assert record["fornecedorNome"] == "Fornecedor Exemplo DEV"
     if tipo.startswith("contingencia_") and payload["registros"]:
         assert set(payload["registros"][0]) == {
             "pedido", "item", "vencimento", "usuario", "status", "valor"

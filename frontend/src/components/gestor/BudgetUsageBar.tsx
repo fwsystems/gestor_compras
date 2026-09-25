@@ -3,22 +3,22 @@ import { calculateBudgetUsage } from '../../utils/budgetUsage'
 interface BudgetUsageBarProps {
   pcAberto: number
   nfEntrada: number
-  limiteTotal: number
+  limiteOriginal: number
 }
 
 export function BudgetUsageBar({
   pcAberto,
   nfEntrada,
-  limiteTotal,
+  limiteOriginal,
 }: BudgetUsageBarProps) {
-  const usage = calculateBudgetUsage(pcAberto, nfEntrada, limiteTotal)
+  const usage = calculateBudgetUsage(pcAberto, nfEntrada, limiteOriginal)
 
   return (
     <div className={`budget-usage usage-${usage.level}`}>
       <div
         className="budget-usage-track"
         role="progressbar"
-        aria-label="Consumo do limite total"
+        aria-label="Consumo do limite original"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={usage.visualPercentage}

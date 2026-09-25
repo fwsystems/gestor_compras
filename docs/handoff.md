@@ -8,6 +8,16 @@ Reconstruir na Web o Gestor de Compras existente no TOTVS Protheus, preservando 
 
 ## 2. Arquitetura atual
 
+## Ajuste visual posterior — colunas do detalhe de NF entrada
+
+O drawer de NF entrada passou a renderizar somente Documento, Parcela, Nome do fornecedor, Emissão, Vencimento e Valor, nessa ordem. Prefixo, fornecedor e loja continuam no retorno da API e nos tipos internos, mas deixaram de ser apresentados nessa tabela. As larguras foram redistribuídas para manter o nome do fornecedor amplo, datas legíveis, valor alinhado à direita e responsividade, sem alterar quantidade, total, filtros, período ou os demais detalhamentos.
+
+Nenhuma alteração foi feita em backend, contrato, SQL, repositories, regras financeiras ou cálculos.
+
+## Ajuste posterior — fornecedor no detalhe de PC aberto
+
+O detalhe de PC aberto passou a retornar e exibir Fornecedor entre Pedido e Vencimento. O código e o nome são obtidos da SC7 elegível do pedido, com enriquecimento opcional do nome pela SA2 ativa; o frontend prioriza o nome e usa o código como fallback. O agregado de PC aberto, quantidade, total, período, ambiente e os demais drawers permanecem inalterados.
+
 - Frontend: React, TypeScript e Vite.
 - Backend: Python, FastAPI, Pydantic Settings e `pyodbc`.
 - Banco: SQL Server do Protheus, acessado somente pelo backend e somente em modo read-only.
@@ -96,12 +106,20 @@ Colunas-base:
 - `(e)` Lim Original.
 
 ```text
-Lim Total      = (e) + (c)
-Saldo previsto = (e) + (c) - (a) - (b)
-Saldo real     = (e) + (c) - (b)
+Gasto previsto = (a) + (b)
+Saldo previsto = (e) - (a) - (b)
+Saldo real     = (e) - (b)
 ```
 
-`(d)` é informativa e não participa de Lim Total, Saldo previsto ou Saldo real. Não mudar essas fórmulas sem evidência funcional do `FWACOM04`.
+`(c)` permanece visível e detalhável, mas é informativa e não participa de Saldo previsto, Saldo real ou percentual consumido. `(d)` também é informativa.
+
+### Ajuste funcional atual — Limite Original como base financeira
+
+`Lim Total` foi removido da tabela principal e das exportações. O Dashboard, os gráficos, a Atenção Gerencial e a Evolução Temporal usam diretamente `(e) Lim Original`. O percentual consumido é `NF Entrada / Lim Original * 100`, com estado `Sem limite` quando o limite é zero e há NF.
+
+`Gasto Previsto` é uma coluna derivada da tabela principal e das exportações: `PC aberto + NF entrada`. Não inclui contingências nem Lim Original.
+
+`(c) Contingência OK` continua visível e detalhável, mas não compõe mais nenhum cálculo financeiro de referência.
 
 ## 8. Estado da homologação
 

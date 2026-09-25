@@ -16,7 +16,6 @@ def make_row(**overrides: object) -> GestorRow:
         "contingencia_ok": Decimal("0.00"),
         "contingencia_em_aprovacao": Decimal("0.00"),
         "limite_original": Decimal("0.00"),
-        "limite_total": Decimal("0.00"),
         "saldo_previsto": Decimal("0.00"),
         "saldo_real": Decimal("0.00"),
     }
@@ -39,7 +38,7 @@ def test_period_rejects_month_outside_calendar(month: int) -> None:
 def test_row_accepts_zero_financial_values() -> None:
     row = make_row()
     assert row.pc_aberto == Decimal("0.00")
-    assert row.limite_total == Decimal("0.00")
+    assert row.limite_original == Decimal("0.00")
 
 
 def test_row_accepts_negative_saldo_previsto() -> None:

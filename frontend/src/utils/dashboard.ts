@@ -1,7 +1,7 @@
 import type { GestorRow } from '../types/gestor'
 
 export interface GestorDashboardTotals {
-  limiteTotal: number
+  limiteOriginal: number
   pcAberto: number
   nfEntrada: number
   contingenciaOk: number
@@ -13,23 +13,23 @@ export interface GestorDashboardTotals {
 
 export function summarizeGestorRows(rows: readonly GestorRow[]): GestorDashboardTotals {
   const totals = rows.reduce((current, row) => ({
-    limiteTotal: current.limiteTotal + row.limiteTotal,
+    limiteOriginal: current.limiteOriginal + row.limiteOriginal,
     pcAberto: current.pcAberto + row.pcAberto,
     nfEntrada: current.nfEntrada + row.nfEntrada,
     contingenciaOk: current.contingenciaOk + row.contingenciaOk,
     contingenciaEmAprovacao: current.contingenciaEmAprovacao + row.contingenciaEmAprovacao,
     saldoPrevisto: current.saldoPrevisto + row.saldoPrevisto,
     saldoReal: current.saldoReal + row.saldoReal,
-  }), { limiteTotal: 0, pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, saldoPrevisto: 0, saldoReal: 0 })
+  }), { limiteOriginal: 0, pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, saldoPrevisto: 0, saldoReal: 0 })
   return {
     ...totals,
-    percentualConsumido: totals.limiteTotal > 0 ? totals.nfEntrada / totals.limiteTotal * 100 : null,
+    percentualConsumido: totals.limiteOriginal > 0 ? totals.nfEntrada / totals.limiteOriginal * 100 : null,
   }
 }
 
 export function dashboardCommitmentChart(totals: GestorDashboardTotals) {
   return [
-    { label: 'Limite Total', valor: totals.limiteTotal },
+    { label: 'Limite Original', valor: totals.limiteOriginal },
     { label: 'PC em aberto', valor: totals.pcAberto },
     { label: 'NF Entrada', valor: totals.nfEntrada },
   ]
@@ -37,8 +37,8 @@ export function dashboardCommitmentChart(totals: GestorDashboardTotals) {
 
 export function topConsumptionRows(rows: readonly GestorRow[]) {
   return rows
-    .filter((row) => row.limiteTotal > 0 || row.nfEntrada > 0)
-    .map((row) => ({ ...row, consumo: row.limiteTotal > 0 ? row.nfEntrada / row.limiteTotal * 100 : 100 }))
+    .filter((row) => row.limiteOriginal > 0 || row.nfEntrada > 0)
+    .map((row) => ({ ...row, consumo: row.limiteOriginal > 0 ? row.nfEntrada / row.limiteOriginal * 100 : 100 }))
     .sort((left, right) => right.consumo - left.consumo)
     .slice(0, 10)
 }
@@ -48,7 +48,7 @@ export function lowestSaldoPrevistoRows(rows: readonly GestorRow[]) {
 }
 
 export function countOverLimitRows(rows: readonly GestorRow[]) {
-  return rows.filter((row) => row.limiteTotal > 0 && row.nfEntrada / row.limiteTotal > 1).length
+  return rows.filter((row) => row.limiteOriginal > 0 && row.nfEntrada / row.limiteOriginal > 1).length
 }
 
 export interface ConsumptionCriticalRow {
@@ -58,8 +58,8 @@ export interface ConsumptionCriticalRow {
 
 export function criticalConsumptionRows(rows: readonly GestorRow[]): ConsumptionCriticalRow[] {
   return rows
-    .filter((row) => (row.limiteTotal > 0 && row.nfEntrada / row.limiteTotal > 1) || (row.limiteTotal === 0 && row.nfEntrada > 0))
-    .map((row) => ({ row, consumption: row.limiteTotal > 0 ? row.nfEntrada / row.limiteTotal * 100 : null }))
+    .filter((row) => (row.limiteOriginal > 0 && row.nfEntrada / row.limiteOriginal > 1) || (row.limiteOriginal === 0 && row.nfEntrada > 0))
+    .map((row) => ({ row, consumption: row.limiteOriginal > 0 ? row.nfEntrada / row.limiteOriginal * 100 : null }))
     .sort((left, right) => {
       if (left.consumption === null && right.consumption !== null) return -1
       if (left.consumption !== null && right.consumption === null) return 1

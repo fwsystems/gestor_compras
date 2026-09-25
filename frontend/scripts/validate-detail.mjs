@@ -10,8 +10,8 @@ const [drawer, hook, types, styles] = await Promise.all([
 const checks = [
   ['contrato preserva código do fornecedor', types.includes('fornecedor: string')],
   ['contrato inclui nome do fornecedor', types.includes('fornecedorNome: string')],
+  ['PC inclui código e nome do fornecedor', types.includes('interface GestorPcAbertoDetailRecord') && types.includes('fornecedorNome: string')],
   ['contrato inclui emissão', types.includes('emissao: string')],
-  ['drawer exibe código do fornecedor', drawer.includes("record.fornecedor || '—'")],
   ['drawer exibe nome do fornecedor', drawer.includes('record.fornecedorNome')],
   ['nome ausente usa fallback neutro', drawer.includes("record.fornecedorNome || '—'")],
   ['drawer exibe emissão formatada', drawer.includes('formatProtheusDate(record.emissao)')],

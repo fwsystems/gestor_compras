@@ -8,6 +8,7 @@ const [drawer, table, hook, types, styles, packageJson] = await Promise.all([
   readFile(new URL('../src/styles.css', import.meta.url), 'utf8'),
   readFile(new URL('../package.json', import.meta.url), 'utf8'),
 ])
+const nfTable = drawer.match(/selection\.type === 'nf_entrada'[\s\S]*?<\/table>/)?.[0] ?? ''
 
 const checks = [
   ['usa o drawer existente', drawer.includes('export function GestorDetailDrawer')],
@@ -19,8 +20,8 @@ const checks = [
   ['contexto exibe ambiente', drawer.includes('environment.toUpperCase()')],
   ['resumo destaca registros', drawer.includes('<dt>Registros</dt>') && drawer.includes('{data.quantidade}')],
   ['resumo destaca total', drawer.includes('<dt>Total</dt>') && drawer.includes('formatCurrency(data.total)')],
-  ['PC preserva três campos', ['Pedido', 'Vencimento', 'Valor'].every((label) => drawer.includes(`scope="col">${label}</th>`))],
-  ['NF preserva nove campos', ['Documento', 'Prefixo', 'Parcela', 'Fornecedor', 'Nome do fornecedor', 'Loja', 'Emissão', 'Vencimento', 'Valor'].every((label) => drawer.includes(`scope="col">${label}</th>`))],
+  ['PC exibe pedido, fornecedor, vencimento e valor', ['Pedido', 'Fornecedor', 'Vencimento', 'Valor'].every((label) => drawer.includes(`scope="col">${label}</th>`)) && drawer.includes('record.fornecedorNome')],
+  ['NF exibe somente os seis campos definidos', ['Documento', 'Parcela', 'Nome do fornecedor', 'Emissão', 'Vencimento', 'Valor'].every((label) => nfTable.includes(`scope="col">${label}</th>`)) && ['Prefixo', 'Fornecedor', 'Loja'].every((label) => !nfTable.includes(`scope="col">${label}</th>`))],
   ['contingências preservam seis campos', ['Pedido', 'Item', 'Vencimento', 'Usuário', 'Status', 'Valor'].every((label) => drawer.includes(`scope="col">${label}</th>`))],
   ['datas usam padrão brasileiro', drawer.includes("/${value.slice(4, 6)}/${value.slice(0, 4)}")],
   ['valores usam formatador monetário existente', drawer.includes('formatCurrency(record.valor)')],

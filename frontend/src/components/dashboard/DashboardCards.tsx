@@ -3,7 +3,7 @@ import type { GestorDashboardTotals } from '../../utils/dashboard'
 import { DashboardIcon, type DashboardIconName } from './DashboardIcon'
 
 const cards: { label: string; field: keyof Omit<GestorDashboardTotals, 'percentualConsumido'>; icon: DashboardIconName; tone: string }[] = [
-  { label: 'Limite Total', field: 'limiteTotal', icon: 'wallet', tone: 'blue' },
+  { label: 'Limite Original', field: 'limiteOriginal', icon: 'wallet', tone: 'blue' },
   { label: 'PC em aberto', field: 'pcAberto', icon: 'clipboard', tone: 'orange' },
   { label: 'NF Entrada', field: 'nfEntrada', icon: 'cart', tone: 'green' },
   { label: 'Contingência OK', field: 'contingenciaOk', icon: 'shield', tone: 'purple' },

@@ -22,6 +22,8 @@ class PcAbertoDetailRecord:
     vencimento: str
     natureza: str
     valor: Decimal
+    fornecedor: str = ""
+    fornecedor_nome: str = ""
 
 
 def _validate_period(ano: int, mes: int) -> str:
@@ -111,6 +113,7 @@ class PcAbertoRepository:
         period_pattern = _validate_period(ano, mes)
         szn_table = get_protheus_table_name("SZN", self._settings)
         sc7_table = get_protheus_table_name("SC7", self._settings)
+        sa2_table = get_protheus_table_name("SA2", self._settings)
         filters = self._filters(sc7_table)
         date_filter, date_parameters = _date_filter("szn.ZN_VENCTO", inicio, fim)
         query = f"""
@@ -118,8 +121,27 @@ class PcAbertoRepository:
                 szn.ZN_NUMPED,
                 szn.ZN_VENCTO,
                 szn.ZN_NATUREZ,
-                szn.ZN_SALDO
+                szn.ZN_SALDO,
+                supplier.C7_FORNECE,
+                supplier.A2_NOME
             FROM {szn_table} AS szn
+            OUTER APPLY (
+                SELECT TOP 1
+                    sc7_supplier.C7_FORNECE,
+                    sa2_supplier.A2_NOME
+                FROM {sc7_table} AS sc7_supplier
+                LEFT JOIN {sa2_table} AS sa2_supplier
+                  ON sa2_supplier.A2_FILIAL = LEFT(szn.ZN_FILIAL, 2)
+                 AND sa2_supplier.A2_COD = sc7_supplier.C7_FORNECE
+                 AND sa2_supplier.A2_LOJA = sc7_supplier.C7_LOJA
+                 AND sa2_supplier.D_E_L_E_T_ = ''
+                WHERE sc7_supplier.C7_FILIAL = szn.ZN_FILIAL
+                  AND sc7_supplier.C7_NUM = szn.ZN_NUMPED
+                  AND NOT (sc7_supplier.C7_QUJE >= sc7_supplier.C7_QUANT)
+                  AND sc7_supplier.C7_RESIDUO = ' '
+                  AND sc7_supplier.D_E_L_E_T_ = ''
+                ORDER BY sc7_supplier.C7_FORNECE, sc7_supplier.C7_LOJA
+            ) AS supplier
             WHERE {filters}{date_filter}
               AND szn.ZN_NATUREZ = ?
             ORDER BY szn.ZN_NUMPED, szn.ZN_VENCTO
@@ -147,6 +169,8 @@ class PcAbertoRepository:
                 vencimento="" if row[1] is None else str(row[1]).strip(),
                 natureza="" if row[2] is None else str(row[2]).strip(),
                 valor=_to_decimal(row[3]),
+                fornecedor="" if row[4] is None else str(row[4]).strip(),
+                fornecedor_nome="" if row[5] is None else str(row[5]).strip(),
             )
             for row in rows
         ]

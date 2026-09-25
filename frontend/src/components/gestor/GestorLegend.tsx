@@ -25,9 +25,10 @@ export function GestorLegend() {
       <div className="formula-summary">
         <p className="control-label">Fórmulas de referência</p>
         <ul>
-          <li>Lim Total = (e) + (c)</li>
-          <li>Saldo previsto = (e) + (c) - (a) - (b)</li>
-          <li>Saldo real = (e) + (c) - (b)</li>
+          <li>Gasto previsto = (a) + (b)</li>
+          <li>Saldo previsto = (e) - (a) - (b)</li>
+          <li>Saldo real = (e) - (b)</li>
+          <li>(c) Contingência OK é informativa e não compõe os saldos</li>
         </ul>
       </div>
 

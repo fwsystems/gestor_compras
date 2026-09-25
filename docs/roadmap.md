@@ -78,6 +78,11 @@ As etapas posteriores estão registradas apenas para planejamento. As Sprints 0,
 - ET-035 Indicadores de Atenção — **concluída tecnicamente; quatro indicadores e detalhes locais no Dashboard**
 - ET-036 Evolução Temporal — **concluída tecnicamente; linha mensal de janeiro ao mês selecionado via endpoint timeline**
 - ET-037 Testes Automatizados — **concluída tecnicamente; cobertura consolidada de timeline, endpoint e validações frontend**
+
+### Ajuste funcional posterior
+
+- `Lim Total` removido da apresentação e exportação; `Lim Original` passou a ser a base de saldos, consumo, Dashboard e gráficos. `Contingência OK` permanece visível/detalhável, mas não compõe os cálculos.
+- `Gasto Previsto` incluído na tabela e exportações como derivação de `PC aberto + NF entrada`, entre `Lim Original` e `Saldo previsto`.
 - ET-036 Evolução Temporal
 - ET-037 Homologação dos usuários
 - ET-038 Correções da homologação

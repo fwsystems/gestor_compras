@@ -27,12 +27,12 @@ O universo exibível segue o comportamento do `FWACOM17`: Natureza SED ativa, `E
 As colunas-base são `(a) PC aberto`, `(b) NF entrada`, `(c) Contingência OK`, `(d) Contingência em aprovação` e `(e) Lim Original`. As fórmulas atuais são:
 
 ```text
-Lim Total      = (e) + (c)
-Saldo previsto = (e) + (c) - (a) - (b)
-Saldo real     = (e) + (c) - (b)
+Gasto previsto = (a) + (b)
+Saldo previsto = (e) - (a) - (b)
+Saldo real     = (e) - (b)
 ```
 
-A coluna `(d)` é somente informativa e não participa dessas fórmulas.
+A coluna `(c)` permanece visível e detalhável, mas é informativa e não participa dos cálculos. A coluna `(d)` também é somente informativa.
 
 Na ET-023, valores não nulos de `(a) PC aberto` e `(b) NF entrada` passaram a abrir um drawer acessível com registros carregados sob demanda por `GET /api/gestor/details`. Valores zero continuam apenas textuais. O detalhe usa os mesmos predicados SQL da consolidação, confere quantidade e soma antes de responder e trata diferença ou ausência incompatível como inconsistência. Trocas de ambiente, período ou filtro fecham e cancelam o detalhe; não há N+1 no carregamento principal.
 
@@ -80,7 +80,7 @@ O ajuste visual da ET-034 adicionou ícones SVG locais aos cards, três gráfico
 
 A ET-035 evoluiu a faixa para Atenção Gerencial: quatro indicadores clicáveis e detalhes locais, sem novas consultas, API, backend ou regras financeiras.
 
-A ET-036 adicionou a Evolução Temporal mensal no Dashboard, alimentada por `/api/gestor/timeline` com Limite Total, NF Entrada e Saldo Previsto de janeiro até o mês selecionado.
+A ET-036 adicionou a Evolução Temporal mensal no Dashboard, alimentada por `/api/gestor/timeline` com Limite Original, NF Entrada e Saldo Previsto de janeiro até o mês selecionado.
 
 A ET-037 consolidou os testes automatizados do Gestor e Dashboard, cobrindo o contrato, cancelamento e séries da timeline, além dos erros e validações do endpoint.
 

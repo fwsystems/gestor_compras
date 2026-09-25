@@ -104,7 +104,7 @@ def format_result(result: PrdValidationResult) -> str:
                     "Contingência em aprovação: "
                     f"{row.contingencia_em_aprovacao}",
                     f"Lim Original: {row.limite_original}",
-                    f"Lim Total: {row.limite_total}",
+                    f"Lim Original: {row.limite_original}",
                     f"Saldo previsto: {row.saldo_previsto}",
                     f"Saldo real: {row.saldo_real}",
                 ]

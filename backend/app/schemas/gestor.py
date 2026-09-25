@@ -43,7 +43,6 @@ class GestorRow(GestorSchema):
     contingencia_ok: Money
     contingencia_em_aprovacao: Money
     limite_original: Money
-    limite_total: Money
     saldo_previsto: Money
     saldo_real: Money
 
@@ -64,7 +63,7 @@ class GestorResponse(GestorSchema):
 class GestorTimelinePoint(GestorSchema):
     ano: int = Field(ge=2000, le=2100)
     mes: int = Field(ge=1, le=12)
-    limite_total: Money
+    limite_original: Money
     nf_entrada: Money
     saldo_previsto: Money
 
@@ -78,6 +77,8 @@ class GestorDetailType(str, Enum):
 
 class GestorPcAbertoDetailRecord(GestorSchema):
     pedido: str
+    fornecedor: str
+    fornecedor_nome: str
     vencimento: str
     valor: Money
 

@@ -23,8 +23,6 @@ def create_gestor_row(values: BaseGestorRow) -> GestorRow:
     contingencia_ok = Decimal(contingencia_ok_raw)
     contingencia_em_aprovacao = Decimal(contingencia_em_aprovacao_raw)
     limite_original = Decimal(limite_original_raw)
-    limite_total = limite_original + contingencia_ok
-
     return GestorRow(
         natureza_codigo=natureza_codigo,
         natureza_descricao=natureza_descricao,
@@ -33,9 +31,8 @@ def create_gestor_row(values: BaseGestorRow) -> GestorRow:
         contingencia_ok=contingencia_ok,
         contingencia_em_aprovacao=contingencia_em_aprovacao,
         limite_original=limite_original,
-        limite_total=limite_total,
-        saldo_previsto=limite_total - pc_aberto - nf_entrada,
-        saldo_real=limite_total - nf_entrada,
+        saldo_previsto=limite_original - pc_aberto - nf_entrada,
+        saldo_real=limite_original - nf_entrada,
     )
 
 

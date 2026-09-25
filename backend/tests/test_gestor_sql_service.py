@@ -131,9 +131,9 @@ def test_complete_deterministic_composition_and_pending_is_informational() -> No
     row = response.linhas[0]
     assert row.natureza_codigo == "0010"
     assert row.natureza_descricao == "NATUREZA TESTE"
-    assert row.limite_total == Decimal("1200.00")
-    assert row.saldo_previsto == Decimal("850.00")
-    assert row.saldo_real == Decimal("1100.00")
+    assert row.limite_original == Decimal("1000.00")
+    assert row.saldo_previsto == Decimal("650.00")
+    assert row.saldo_real == Decimal("900.00")
     assert row.contingencia_em_aprovacao == Decimal("500.00")
     assert response.quantidade == 1
 
@@ -304,8 +304,8 @@ def test_pc_detail_matches_consolidated_and_uses_catalog_description() -> None:
         pcs=[PcAbertoRecord("001", Decimal("100"))],
     )
     repositories["pc"].detail_records = [
-        PcAbertoDetailRecord("10", "20250910", "001", Decimal("40")),
-        PcAbertoDetailRecord("11", "20250920", "001", Decimal("60")),
+        PcAbertoDetailRecord("10", "20250910", "001", Decimal("40"), "000001", "Fornecedor A"),
+        PcAbertoDetailRecord("11", "20250920", "001", Decimal("60"), "000002", "Fornecedor B"),
     ]
     response = service.get_details(
         ambiente=GestorDataEnvironment.PRD,
@@ -316,6 +316,8 @@ def test_pc_detail_matches_consolidated_and_uses_catalog_description() -> None:
     assert response.natureza_descricao == "NATUREZA TESTE"
     assert response.total == Decimal("100")
     assert response.quantidade == 2
+    assert response.registros[0].model_dump(by_alias=True)["fornecedor"] == "000001"
+    assert response.registros[0].model_dump(by_alias=True)["fornecedorNome"] == "Fornecedor A"
     assert repositories["pc"].calls == [
         ("0101", 2025, 9), ("0101", 2025, 9, "001")
     ]

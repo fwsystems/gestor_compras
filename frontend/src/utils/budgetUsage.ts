@@ -1,11 +1,6 @@
 import type { GestorRow } from '../types/gestor'
 
-export type UsageLevel =
-  | 'comfortable'
-  | 'attention'
-  | 'near-limit'
-  | 'committed'
-  | 'exceeded'
+export type UsageLevel = 'comfortable' | 'attention' | 'near-limit' | 'committed' | 'exceeded'
 
 const PERCENTAGE_EQUALITY_TOLERANCE = 1e-9
 
@@ -21,9 +16,7 @@ export interface BudgetUsage {
 
 export function getUsageLevel(percentage: number): UsageLevel {
   if (percentage > 100 + PERCENTAGE_EQUALITY_TOLERANCE) return 'exceeded'
-  if (
-    Math.abs(percentage - 100) <= PERCENTAGE_EQUALITY_TOLERANCE
-  ) return 'committed'
+  if (Math.abs(percentage - 100) <= PERCENTAGE_EQUALITY_TOLERANCE) return 'committed'
   if (percentage >= 90) return 'near-limit'
   if (percentage >= 70) return 'attention'
   return 'comfortable'
@@ -32,12 +25,12 @@ export function getUsageLevel(percentage: number): UsageLevel {
 export function calculateBudgetUsage(
   pcAberto: number,
   nfEntrada: number,
-  limiteTotal: number,
+  limiteOriginal: number,
 ): BudgetUsage {
   const consumption = pcAberto + nfEntrada
 
-  if (limiteTotal <= 0) {
-    if (limiteTotal === 0 && consumption === 0) {
+  if (limiteOriginal <= 0) {
+    if (limiteOriginal === 0 && nfEntrada === 0) {
       return {
         consumption,
         percentage: 0,
@@ -54,13 +47,13 @@ export function calculateBudgetUsage(
       percentage: null,
       roundedPercentage: null,
       visualPercentage: 100,
-      label: '100%+ utilizado',
-      accessibleLabel: '100%+ utilizado — limite excedido',
+      label: 'Sem limite',
+      accessibleLabel: 'Sem limite — consumo sem base de Limite Original',
       level: 'exceeded',
     }
   }
 
-  const percentage = (consumption / limiteTotal) * 100
+  const percentage = (nfEntrada / limiteOriginal) * 100
   const roundedPercentage = Math.round(percentage)
   const level = getUsageLevel(percentage)
   const statusLabels: Record<UsageLevel, string> = {
@@ -84,7 +77,7 @@ export function calculateBudgetUsage(
 }
 
 export function isCriticalGestorRow(
-  row: Pick<GestorRow, 'saldoPrevisto' | 'limiteTotal'>,
+  row: Pick<GestorRow, 'saldoPrevisto' | 'limiteOriginal'>,
 ): boolean {
-  return row.saldoPrevisto < 0 || row.limiteTotal < 0
+  return row.saldoPrevisto < 0 || row.limiteOriginal < 0
 }

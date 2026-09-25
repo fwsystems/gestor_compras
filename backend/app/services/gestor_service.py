@@ -53,7 +53,6 @@ def get_gestor(
                 totals[tipo] = detail.total
             limite_original = proportional_limit(row.limite_original, factor)
             contingencia_ok = totals[GestorDetailType.CONTINGENCIA_OK]
-            limite_total = limite_original + contingencia_ok
             filtered_rows.append(
                 GestorRow(
                     natureza_codigo=row.natureza_codigo,
@@ -63,9 +62,8 @@ def get_gestor(
                     contingencia_ok=contingencia_ok,
                     contingencia_em_aprovacao=totals[GestorDetailType.CONTINGENCIA_APROVACAO],
                     limite_original=limite_original,
-                    limite_total=limite_total,
-                    saldo_previsto=limite_total - totals[GestorDetailType.PC_ABERTO] - totals[GestorDetailType.NF_ENTRADA],
-                    saldo_real=limite_total - totals[GestorDetailType.NF_ENTRADA],
+                    saldo_previsto=limite_original - totals[GestorDetailType.PC_ABERTO] - totals[GestorDetailType.NF_ENTRADA],
+                    saldo_real=limite_original - totals[GestorDetailType.NF_ENTRADA],
                 )
             )
         linhas = filtered_rows
@@ -119,11 +117,15 @@ def get_gestor_details(
         records = [
             GestorPcAbertoDetailRecord(
                 pedido=f"DEV-{normalized_nature}-01",
+                fornecedor="000001",
+                fornecedor_nome="Fornecedor Exemplo DEV",
                 vencimento=f"{ano:04d}{mes:02d}10",
                 valor=first,
             ),
             GestorPcAbertoDetailRecord(
                 pedido=f"DEV-{normalized_nature}-02",
+                fornecedor="000001",
+                fornecedor_nome="Fornecedor Exemplo DEV",
                 vencimento=f"{ano:04d}{mes:02d}20",
                 valor=consolidated - first,
             ),

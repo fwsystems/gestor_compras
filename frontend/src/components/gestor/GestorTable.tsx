@@ -2,6 +2,7 @@ import type { GestorDetailType, GestorRow } from '../../types/gestor'
 import type { GestorSort, GestorSortField } from '../../utils/gestorSort'
 import { isCriticalGestorRow } from '../../utils/budgetUsage'
 import { formatCurrency } from '../../utils/currency'
+import { getGastoPrevisto } from '../../utils/gestorDerived'
 import { BudgetUsageBar } from './BudgetUsageBar'
 
 const columns = [
@@ -11,7 +12,7 @@ const columns = [
   { label: '(c) Contingência OK', field: 'contingenciaOk', monetary: true },
   { label: '(d) Contingência em aprovação', field: 'contingenciaEmAprovacao', monetary: true },
   { label: '(e) Lim Original', field: 'limiteOriginal', monetary: true },
-  { label: 'Lim Total', field: 'limiteTotal', monetary: true },
+  { label: 'Gasto Previsto', field: 'gastoPrevisto', monetary: true },
   { label: 'Saldo previsto', field: 'saldoPrevisto', monetary: true },
   { label: 'Saldo real', field: 'saldoReal', monetary: true },
 ] as const
@@ -31,19 +32,21 @@ interface GestorTableProps {
   exportDisabled: boolean
 }
 
+type TableMoneyField = keyof GestorRow | 'gastoPrevisto'
+
 const monetaryFields = [
   'pcAberto',
   'nfEntrada',
   'contingenciaOk',
   'contingenciaEmAprovacao',
   'limiteOriginal',
-  'limiteTotal',
+  'gastoPrevisto',
   'saldoPrevisto',
   'saldoReal',
-] as const satisfies readonly (keyof GestorRow)[]
+] as const satisfies readonly TableMoneyField[]
 
 const detailConfig: Partial<Record<
-  (typeof monetaryFields)[number],
+  Exclude<(typeof monetaryFields)[number], 'gastoPrevisto'>,
   { type: GestorDetailType; label: string }
 >> = {
   pcAberto: { type: 'pc_aberto', label: 'PC aberto' },
@@ -176,32 +179,34 @@ export function GestorTable({
                     <BudgetUsageBar
                       pcAberto={row.pcAberto}
                       nfEntrada={row.nfEntrada}
-                      limiteTotal={row.limiteTotal}
+                      limiteOriginal={row.limiteOriginal}
                     />
                     {isCriticalGestorRow(row) && (
                       <span className="sr-only">
-                        Situação crítica: saldo previsto ou limite total
+                        Situação crítica: saldo previsto ou limite original
                         negativo.
                       </span>
                     )}
                   </th>
                   {monetaryFields.map((field) => {
-                    const detail = detailConfig[field]
+                    const value = field === 'gastoPrevisto' ? getGastoPrevisto(row) : row[field]
+                    const detail = field === 'gastoPrevisto' ? undefined : detailConfig[field]
+                    const canDetail = field !== 'gastoPrevisto' && detail && row[field] !== 0
                     return (
                       <td
-                        className={`money-cell${row[field] < 0 ? ' money-negative' : ''}`}
+                        className={`money-cell${value < 0 ? ' money-negative' : ''}`}
                         key={field}
                       >
-                      {detail && row[field] !== 0 ? (
+                      {canDetail ? (
                         <button
                           className="detail-trigger"
                           type="button"
                           onClick={() => onOpenDetail(row, detail.type)}
-                          aria-label={`Detalhar ${detail.label} da natureza ${row.naturezaCodigo}, ${formatCurrency(row[field])}`}
+                          aria-label={`Detalhar ${detail.label} da natureza ${row.naturezaCodigo}, ${formatCurrency(value)}`}
                         >
-                          {formatCurrency(row[field])}
+                          {formatCurrency(value)}
                         </button>
-                      ) : formatCurrency(row[field])}
+                      ) : formatCurrency(value)}
                       </td>
                     )
                   })}

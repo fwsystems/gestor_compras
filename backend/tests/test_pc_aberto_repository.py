@@ -217,7 +217,7 @@ def test_detail_reuses_open_order_filters_and_is_parameterized(
 ) -> None:
     cursor = install_fake_connection(
         monkeypatch,
-        [(" 000123 ", "20250920", " 4.000-010 ", Decimal("125.50"))],  # type: ignore[list-item]
+        [(" 000123 ", "20250920", " 4.000-010 ", Decimal("125.50"), "000001", "Fornecedor Teste")],  # type: ignore[list-item]
     )
     records = PcAbertoRepository(repository_settings()).list_pc_aberto_details(
         " 0101 ", 2025, 9, " 4.000-010 "
@@ -226,10 +226,13 @@ def test_detail_reuses_open_order_filters_and_is_parameterized(
     assert "NOT (SC7.C7_QUJE >= SC7.C7_QUANT)" in sql
     assert "SC7.C7_RESIDUO = ?" in sql
     assert "SZN.ZN_NATUREZ = ?" in sql
+    assert "OUTER APPLY" in sql
+    assert "SC7_SUPPLIER.C7_FORNECE" in sql
+    assert "SA2_SUPPLIER.A2_NOME" in sql
     assert "SUM(" not in sql and "GROUP BY" not in sql
     assert cursor.parameters == ("0101", "202509%", " ", "4.000-010")
     assert records == [
-        PcAbertoDetailRecord("000123", "20250920", "4.000-010", Decimal("125.50"))
+        PcAbertoDetailRecord("000123", "20250920", "4.000-010", Decimal("125.50"), "000001", "Fornecedor Teste")
     ]
 
 

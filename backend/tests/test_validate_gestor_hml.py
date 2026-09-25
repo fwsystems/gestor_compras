@@ -48,7 +48,6 @@ def sample_response() -> GestorResponse:
                 contingencia_ok=Decimal("200.00"),
                 contingencia_em_aprovacao=Decimal("500.00"),
                 limite_original=Decimal("1000.00"),
-                limite_total=Decimal("1200.00"),
                 saldo_previsto=Decimal("850.00"),
                 saldo_real=Decimal("1100.00"),
             )

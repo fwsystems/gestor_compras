@@ -6,6 +6,7 @@ import type {
   GestorDetailResponse,
   GestorDetailSelection,
   GestorNfEntradaDetailRecord,
+  GestorPcAbertoDetailRecord,
   GestorPeriod,
 } from '../../types/gestor'
 import { formatCurrency } from '../../utils/currency'
@@ -38,6 +39,12 @@ function isContingenciaRecord(
   record: GestorDetailResponse['registros'][number],
 ): record is GestorContingenciaDetailRecord {
   return 'item' in record
+}
+
+function isPcAbertoRecord(
+  record: GestorDetailResponse['registros'][number],
+): record is GestorPcAbertoDetailRecord {
+  return 'pedido' in record && !('item' in record)
 }
 
 export function GestorDetailDrawer({
@@ -151,11 +158,11 @@ export function GestorDetailDrawer({
               >
                 {selection.type === 'pc_aberto' ? (
                   <table className="detail-table detail-table-pc">
-                    <thead><tr><th scope="col">Pedido</th><th scope="col">Vencimento</th><th scope="col">Valor</th></tr></thead>
+                    <thead><tr><th scope="col">Pedido</th><th scope="col">Fornecedor</th><th scope="col">Vencimento</th><th scope="col">Valor</th></tr></thead>
                     <tbody>
-                      {data.registros.map((record, index) => !isNfRecord(record) && (
+                      {data.registros.map((record, index) => isPcAbertoRecord(record) && (
                         <tr key={`${record.pedido}-${record.vencimento}-${index}`}>
-                          <td>{record.pedido || '—'}</td>
+                          <td>{record.pedido || '—'}</td><td>{record.fornecedorNome || record.fornecedor || '—'}</td>
                           <td>{formatProtheusDate(record.vencimento)}</td>
                           <td className="money-cell">{formatCurrency(record.valor)}</td>
                         </tr>
@@ -164,13 +171,12 @@ export function GestorDetailDrawer({
                   </table>
                 ) : selection.type === 'nf_entrada' ? (
                   <table className="detail-table detail-table-nf">
-                    <thead><tr><th scope="col">Documento</th><th scope="col">Prefixo</th><th scope="col">Parcela</th><th scope="col">Fornecedor</th><th scope="col">Nome do fornecedor</th><th scope="col">Loja</th><th scope="col">Emissão</th><th scope="col">Vencimento</th><th scope="col">Valor</th></tr></thead>
+                    <thead><tr><th scope="col">Documento</th><th scope="col">Parcela</th><th scope="col">Nome do fornecedor</th><th scope="col">Emissão</th><th scope="col">Vencimento</th><th scope="col">Valor</th></tr></thead>
                     <tbody>
                       {data.registros.map((record, index) => isNfRecord(record) && (
                         <tr key={`${record.documento}-${record.prefixo}-${record.parcela}-${index}`}>
-                          <td>{record.documento || '—'}</td><td>{record.prefixo || '—'}</td>
-                          <td>{record.parcela || '—'}</td><td>{record.fornecedor || '—'}</td>
-                          <td>{record.fornecedorNome || '—'}</td><td>{record.loja || '—'}</td>
+                          <td>{record.documento || '—'}</td><td>{record.parcela || '—'}</td>
+                          <td>{record.fornecedorNome || '—'}</td>
                           <td>{formatProtheusDate(record.emissao)}</td><td>{formatProtheusDate(record.vencimento)}</td>
                           <td className="money-cell">{formatCurrency(record.valor)}</td>
                         </tr>

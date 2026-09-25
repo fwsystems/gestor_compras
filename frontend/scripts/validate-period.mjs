@@ -16,7 +16,9 @@ try {
   const granularity = await vite.ssrLoadModule('/src/utils/granularity.ts')
   const gestorSort = await vite.ssrLoadModule('/src/utils/gestorSort.ts')
   const gestorExport = await vite.ssrLoadModule('/src/utils/gestorExport.ts')
+  const gestorDerived = await vite.ssrLoadModule('/src/utils/gestorDerived.ts')
   const dashboard = await vite.ssrLoadModule('/src/utils/dashboard.ts')
+  const budgetUsage = await vite.ssrLoadModule('/src/utils/budgetUsage.ts')
   const allAvailable = {
     default: 'prd',
     environments: [
@@ -141,19 +143,25 @@ try {
   }
   console.log('OK intervalo do hook usa dependências primitivas estáveis')
 
+  const gestorTableSource = await readFile(new URL('../src/components/gestor/GestorTable.tsx', import.meta.url), 'utf8')
+  if (gestorTableSource.includes("label: 'Lim Total'") || gestorTableSource.includes("field: 'limiteTotal'") || gestorTableSource.includes('row.limiteTotal')) {
+    throw new Error('tabela principal ainda renderiza Lim Total')
+  }
+  console.log('OK tabela principal não renderiza Lim Total')
+
   const timelineHookSource = await readFile(new URL('../src/hooks/useGestorTimeline.ts', import.meta.url), 'utf8')
   const timelineServiceSource = await readFile(new URL('../src/services/gestorService.ts', import.meta.url), 'utf8')
   const timelineChartSource = await readFile(new URL('../src/components/dashboard/DashboardTimeline.tsx', import.meta.url), 'utf8')
-  if (!timelineHookSource.includes('new AbortController()') || !timelineHookSource.includes('controller.abort()') || !timelineServiceSource.includes('/api/gestor/timeline?${query}') || !timelineChartSource.includes('LineChart') || !timelineChartSource.includes('limiteTotal') || !timelineChartSource.includes('nfEntrada') || !timelineChartSource.includes('saldoPrevisto')) {
+  if (!timelineHookSource.includes('new AbortController()') || !timelineHookSource.includes('controller.abort()') || !timelineServiceSource.includes('/api/gestor/timeline?${query}') || !timelineChartSource.includes('LineChart') || !timelineChartSource.includes('limiteOriginal') || !timelineChartSource.includes('nfEntrada') || !timelineChartSource.includes('saldoPrevisto')) {
     throw new Error('timeline não preserva contrato, cancelamento ou três linhas mensais')
   }
   console.log('OK timeline mensal usa endpoint dedicado, abortamento e três séries esperadas')
 
   const sortableRows = [
-    { naturezaCodigo: '4.000-460', naturezaDescricao: 'Z', pcAberto: 10, nfEntrada: 2, contingenciaOk: 3, contingenciaEmAprovacao: 4, limiteOriginal: 5, limiteTotal: 8, saldoPrevisto: -4, saldoReal: 6 },
-    { naturezaCodigo: '1.000-050', naturezaDescricao: 'A', pcAberto: -5, nfEntrada: 9, contingenciaOk: 1, contingenciaEmAprovacao: 8, limiteOriginal: 7, limiteTotal: 9, saldoPrevisto: -10, saldoReal: -1 },
+    { naturezaCodigo: '4.000-460', naturezaDescricao: 'Z', pcAberto: 10, nfEntrada: 2, contingenciaOk: 3, contingenciaEmAprovacao: 4, limiteOriginal: 5, saldoPrevisto: -7, saldoReal: 3 },
+    { naturezaCodigo: '1.000-050', naturezaDescricao: 'A', pcAberto: -5, nfEntrada: 9, contingenciaOk: 1, contingenciaEmAprovacao: 8, limiteOriginal: 7, saldoPrevisto: 3, saldoReal: -2 },
   ]
-  for (const field of ['natureza', 'pcAberto', 'nfEntrada', 'contingenciaOk', 'contingenciaEmAprovacao', 'limiteOriginal', 'limiteTotal', 'saldoPrevisto', 'saldoReal']) {
+  for (const field of ['natureza', 'pcAberto', 'nfEntrada', 'contingenciaOk', 'contingenciaEmAprovacao', 'limiteOriginal', 'gastoPrevisto', 'saldoPrevisto', 'saldoReal']) {
     const asc = gestorSort.sortGestorRows(sortableRows, { field, direction: 'ascending' })
     const desc = gestorSort.sortGestorRows(sortableRows, { field, direction: 'descending' })
     if (asc[0] === desc[0]) throw new Error(`ordenação ${field} não alterna direção`)
@@ -165,6 +173,11 @@ try {
   console.log('OK ordenação numérica, filtro preservado e sem API')
 
   const csv = gestorExport.createGestorCsv(sortableRows)
+  const exportedRows = gestorExport.gestorExportRows(sortableRows)
+  if (!csv.includes(';Gasto Previsto;') || exportedRows[0][6] !== 12) {
+    throw new Error('Gasto Previsto não foi exportado na posição esperada')
+  }
+  console.log('OK Gasto Previsto exportado após Lim Original')
   if (!csv.startsWith('\uFEFFNatureza Financeira;') || !csv.includes('1.000-050 - A;-5,00;9,00') || !gestorExport.gestorExportRows(sortableRows)[0].every((value, index) => index === 0 || typeof value === 'number')) {
     throw new Error('exportação CSV/XLSX não preserva formato ou números')
   }
@@ -173,20 +186,35 @@ try {
   }
   console.log('OK exportação CSV pt-BR, células XLSX numéricas e nomes de arquivo')
 
+  const gastoCases = [[10, 20, 30], [0, 20, 20], [10, 0, 10], [0, 0, 0]]
+  for (const [pcAberto, nfEntrada, expected] of gastoCases) {
+    if (gestorDerived.getGastoPrevisto({ pcAberto, nfEntrada }) !== expected) throw new Error('Gasto Previsto inválido')
+  }
+  if (gestorDerived.getGastoPrevisto({ pcAberto: 10, nfEntrada: 20, contingenciaOk: 999, contingenciaEmAprovacao: 999 }) !== 30) {
+    throw new Error('Gasto Previsto inclui contingência')
+  }
+  console.log('OK Gasto Previsto soma somente PC aberto e NF entrada')
+
   const dashboardTotals = dashboard.summarizeGestorRows(sortableRows)
-  if (dashboardTotals.limiteTotal !== 17 || dashboardTotals.nfEntrada !== 11 || dashboardTotals.percentualConsumido !== 11 / 17 * 100 || dashboard.summarizeGestorRows([]).percentualConsumido !== null) {
+  if (dashboardTotals.limiteOriginal !== 12 || dashboardTotals.nfEntrada !== 11 || dashboardTotals.percentualConsumido !== 11 / 12 * 100 || dashboard.summarizeGestorRows([]).percentualConsumido !== null) {
     throw new Error('indicadores do dashboard inválidos')
   }
   console.log('OK indicadores do dashboard reutilizam consolidados e evitam divisão por zero')
-  if (dashboard.topConsumptionRows(sortableRows)[0].naturezaCodigo !== '1.000-050' || dashboard.lowestSaldoPrevistoRows(sortableRows)[0].saldoPrevisto !== -10 || dashboard.dashboardCommitmentChart(dashboardTotals).length !== 3 || dashboard.countOverLimitRows(sortableRows) !== 0) {
+  const semLimite = budgetUsage.calculateBudgetUsage(30, 5, 0)
+  const limiteZerado = budgetUsage.calculateBudgetUsage(0, 0, 0)
+  if (semLimite.label !== 'Sem limite' || semLimite.percentage !== null || !Number.isFinite(semLimite.visualPercentage) || limiteZerado.percentage !== 0) {
+    throw new Error('percentual consumido não trata Limite Original zero corretamente')
+  }
+  console.log('OK percentual consumido usa Limite Original e evita NaN/Infinity')
+  if (dashboard.topConsumptionRows(sortableRows)[0].naturezaCodigo !== '1.000-050' || dashboard.lowestSaldoPrevistoRows(sortableRows)[0].saldoPrevisto !== -7 || dashboard.dashboardCommitmentChart(dashboardTotals).length !== 3 || dashboard.countOverLimitRows(sortableRows) !== 1) {
     throw new Error('rankings dos gráficos inválidos')
   }
   console.log('OK gráficos usam top 10 local e menor saldo previsto primeiro')
   const attentionRows = [
-    { naturezaCodigo: '2.000-100', naturezaDescricao: 'Sem limite', pcAberto: 30, nfEntrada: 5, contingenciaOk: 0, contingenciaEmAprovacao: 7, limiteOriginal: 0, limiteTotal: 0, saldoPrevisto: -35, saldoReal: -5 },
-    { naturezaCodigo: '2.000-200', naturezaDescricao: 'Acima do limite', pcAberto: 80, nfEntrada: 150, contingenciaOk: 0, contingenciaEmAprovacao: 20, limiteOriginal: 100, limiteTotal: 100, saldoPrevisto: -130, saldoReal: -50 },
-    { naturezaCodigo: '2.000-300', naturezaDescricao: 'Regular', pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, limiteOriginal: 50, limiteTotal: 50, saldoPrevisto: 50, saldoReal: 50 },
-    { naturezaCodigo: '2.000-400', naturezaDescricao: 'Zero sem NF', pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, limiteOriginal: 0, limiteTotal: 0, saldoPrevisto: 0, saldoReal: 0 },
+    { naturezaCodigo: '2.000-100', naturezaDescricao: 'Sem limite', pcAberto: 30, nfEntrada: 5, contingenciaOk: 0, contingenciaEmAprovacao: 7, limiteOriginal: 0, saldoPrevisto: -35, saldoReal: -5 },
+    { naturezaCodigo: '2.000-200', naturezaDescricao: 'Acima do limite', pcAberto: 80, nfEntrada: 150, contingenciaOk: 0, contingenciaEmAprovacao: 20, limiteOriginal: 100, saldoPrevisto: -130, saldoReal: -50 },
+    { naturezaCodigo: '2.000-300', naturezaDescricao: 'Regular', pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, limiteOriginal: 50, saldoPrevisto: 50, saldoReal: 50 },
+    { naturezaCodigo: '2.000-400', naturezaDescricao: 'Zero sem NF', pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, limiteOriginal: 0, saldoPrevisto: 0, saldoReal: 0 },
   ]
   const critical = dashboard.criticalConsumptionRows(attentionRows)
   if (critical.length !== 2 || critical[0].consumption !== null || critical[1].consumption !== 150 || dashboard.negativeSaldoPrevistoTotal(attentionRows) !== -165 || dashboard.negativeSaldoPrevistoRows(attentionRows)[0].naturezaCodigo !== '2.000-200' || dashboard.pcAbertoRows(attentionRows)[0].pcAberto !== 80 || dashboard.contingencyApprovalRows(attentionRows)[0].contingenciaEmAprovacao !== 20) {

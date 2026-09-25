@@ -199,8 +199,6 @@ class GestorSqlService:
                 if contingencia is not None
                 else ZERO
             )
-            limite_total = limite_original + contingencia_ok
-
             linhas.append(
                 GestorRow(
                     natureza_codigo=codigo,
@@ -210,9 +208,8 @@ class GestorSqlService:
                     contingencia_ok=contingencia_ok,
                     contingencia_em_aprovacao=contingencia_em_aprovacao,
                     limite_original=limite_original,
-                    limite_total=limite_total,
-                    saldo_previsto=limite_total - pc_aberto - nf_entrada,
-                    saldo_real=limite_total - nf_entrada,
+                    saldo_previsto=limite_original - pc_aberto - nf_entrada,
+                    saldo_real=limite_original - nf_entrada,
                 )
             )
 
@@ -269,6 +266,8 @@ class GestorSqlService:
             records = [
                 GestorPcAbertoDetailRecord(
                     pedido=record.pedido,
+                    fornecedor=record.fornecedor,
+                    fornecedor_nome=record.fornecedor_nome,
                     vencimento=record.vencimento,
                     valor=record.valor,
                 )

@@ -2,8 +2,9 @@ import * as XLSX from 'xlsx'
 
 import type { GestorDataEnvironment, GestorPeriod, GestorRow } from '../types/gestor'
 import type { GestorGranularity } from './granularity'
+import { getGastoPrevisto } from './gestorDerived'
 
-const headers = ['Natureza Financeira', '(a) PC aberto', '(b) NF entrada', '(c) Contingência OK', '(d) Contingência em aprovação', '(e) Lim Original', 'Lim Total', 'Saldo previsto', 'Saldo real']
+const headers = ['Natureza Financeira', '(a) PC aberto', '(b) NF entrada', '(c) Contingência OK', '(d) Contingência em aprovação', '(e) Lim Original', 'Gasto Previsto', 'Saldo previsto', 'Saldo real']
 
 function formatCsvNumber(value: number): string {
   return value.toFixed(2).replace('.', ',')
@@ -17,14 +18,17 @@ export function gestorExportRows(rows: readonly GestorRow[]): (string | number)[
   return rows.map((row) => [
     `${row.naturezaCodigo} - ${row.naturezaDescricao}`,
     row.pcAberto, row.nfEntrada, row.contingenciaOk, row.contingenciaEmAprovacao,
-    row.limiteOriginal, row.limiteTotal, row.saldoPrevisto, row.saldoReal,
+    row.limiteOriginal, getGastoPrevisto(row), row.saldoPrevisto, row.saldoReal,
   ])
 }
 
 export function createGestorCsv(rows: readonly GestorRow[]): string {
-  const lines = [headers, ...gestorExportRows(rows)].map((row) =>
+  const lines = [
+    headers.map(escapeCsv).join(';'),
+    ...gestorExportRows(rows).map((row) =>
     row.map((value, index) => index === 0 ? escapeCsv(String(value)) : formatCsvNumber(Number(value))).join(';'),
-  )
+    ),
+  ]
   return `\uFEFF${lines.join('\r\n')}`
 }
 

@@ -132,7 +132,7 @@ def gestor_timeline(
                 GestorTimelinePoint(
                     ano=ano,
                     mes=current_month,
-                    limite_total=sum((row.limite_total for row in gestor_month.linhas), 0),
+                    limite_original=sum((row.limite_original for row in gestor_month.linhas), 0),
                     nf_entrada=sum((row.nf_entrada for row in gestor_month.linhas), 0),
                     saldo_previsto=sum((row.saldo_previsto for row in gestor_month.linhas), 0),
                 )

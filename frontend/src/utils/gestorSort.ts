@@ -1,4 +1,5 @@
 import type { GestorRow } from '../types/gestor'
+import { getGastoPrevisto } from './gestorDerived'
 
 export type GestorSortField =
   | 'natureza'
@@ -7,7 +8,7 @@ export type GestorSortField =
   | 'contingenciaOk'
   | 'contingenciaEmAprovacao'
   | 'limiteOriginal'
-  | 'limiteTotal'
+  | 'gastoPrevisto'
   | 'saldoPrevisto'
   | 'saldoReal'
 
@@ -31,7 +32,9 @@ export function sortGestorRows(
       })
       return multiplier * (byCode || left.naturezaDescricao.localeCompare(right.naturezaDescricao, 'pt-BR'))
     }
-    return multiplier * (left[sort.field] - right[sort.field])
+    const leftValue = sort.field === 'gastoPrevisto' ? getGastoPrevisto(left) : left[sort.field]
+    const rightValue = sort.field === 'gastoPrevisto' ? getGastoPrevisto(right) : right[sort.field]
+    return multiplier * (leftValue - rightValue)
   })
 }
 
