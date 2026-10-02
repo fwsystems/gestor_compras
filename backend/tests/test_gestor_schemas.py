@@ -18,6 +18,7 @@ def make_row(**overrides: object) -> GestorRow:
         "limite_original": Decimal("0.00"),
         "saldo_previsto": Decimal("0.00"),
         "saldo_real": Decimal("0.00"),
+        "pago_liquido": Decimal("0.00"),
     }
     values.update(overrides)
     return GestorRow(**values)  # type: ignore[arg-type]
@@ -57,6 +58,7 @@ def test_response_accepts_empty_rows() -> None:
         filial="0101",
         linhas=[],
         quantidade=0,
+        pago_liquido=Decimal("0"),
     )
     assert response.linhas == []
     assert response.quantidade == 0
@@ -69,6 +71,7 @@ def test_response_requires_count_to_match_rows() -> None:
             filial="0101",
             linhas=[make_row()],
             quantidade=0,
+            pago_liquido=Decimal("0"),
         )
 
 
@@ -78,6 +81,7 @@ def test_financial_values_are_serialized_as_json_numbers() -> None:
         filial="0101",
         linhas=[make_row(pc_aberto=Decimal("40000.25"))],
         quantidade=1,
+        pago_liquido=Decimal("123.45"),
     )
 
     payload = json.loads(response.model_dump_json())
@@ -85,3 +89,4 @@ def test_financial_values_are_serialized_as_json_numbers() -> None:
     assert payload["linhas"][0]["pcAberto"] == 40000.25
     assert isinstance(payload["linhas"][0]["pcAberto"], (int, float))
     assert payload["quantidade"] == len(payload["linhas"])
+    assert payload["pagoLiquido"] == 123.45

@@ -45,6 +45,10 @@ class GestorRow(GestorSchema):
     limite_original: Money
     saldo_previsto: Money
     saldo_real: Money
+    pago_liquido: Money
+    pago: Money = Decimal("0")
+    a_pagar: Money = Decimal("0")
+    total: Money = Decimal("0")
 
 
 class GestorResponse(GestorSchema):
@@ -52,6 +56,10 @@ class GestorResponse(GestorSchema):
     filial: str = Field(min_length=1)
     linhas: list[GestorRow]
     quantidade: int = Field(ge=0)
+    pago_liquido: Money
+    pago: Money = Decimal("0")
+    a_pagar: Money = Decimal("0")
+    total: Money = Decimal("0")
 
     @model_validator(mode="after")
     def validate_quantidade(self) -> "GestorResponse":

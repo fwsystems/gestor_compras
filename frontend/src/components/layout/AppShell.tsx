@@ -11,6 +11,12 @@ export function AppShell() {
     '/': 'Início',
     '/gestor': 'Gestor de Compras',
     '/dashboard': 'Dashboard',
+    '/relatorios': 'Relat\u00f3rios',
+    '/relatorios/consumo-por-natureza': 'Consumo por Natureza',
+    '/relatorios/pc-em-aberto': 'PC em Aberto',
+    '/relatorios/nf-entrada': 'NF Entrada',
+    '/relatorios/naturezas-criticas': 'Naturezas Críticas',
+    '/relatorios/evolucao-mensal': 'Evolução Mensal',
   }
   const pageTitle = pageTitles[pathname] ?? 'Página não encontrada'
 

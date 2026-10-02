@@ -1,4 +1,5 @@
 from typing import Any
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -194,6 +195,10 @@ def test_gestor_public_json_and_known_calculations() -> None:
         "limiteOriginal",
         "saldoPrevisto",
         "saldoReal",
+            "pagoLiquido",
+            "pago",
+            "aPagar",
+            "total",
     }
 
     assert set(row) == expected_keys
@@ -238,7 +243,9 @@ def test_hml_service_receives_query_and_returns_same_contract(
 
         def get_gestor(self, filial: str, ano: int, mes: int) -> GestorResponse:
             self.calls.append((filial, ano, mes))
-            return get_mock_gestor(filial=filial, ano=ano, mes=mes)
+            return get_mock_gestor(filial=filial, ano=ano, mes=mes).model_copy(
+                update={"pago_liquido": Decimal("123.45")}
+            )
 
     service = FakeSqlService()
     selected: list[GestorDataEnvironment] = []
@@ -258,7 +265,8 @@ def test_hml_service_receives_query_and_returns_same_contract(
     assert selected == [GestorDataEnvironment.HML]
     assert service.calls == [("0101", 2025, 9)]
     assert response.json()["quantidade"] == 20
-    assert set(response.json()) == {"periodo", "filial", "linhas", "quantidade"}
+    assert response.json()["pagoLiquido"] == 123.45
+    assert set(response.json()) == {"periodo", "filial", "linhas", "quantidade", "pagoLiquido", "pago", "aPagar", "total"}
 
 
 @pytest.mark.parametrize(
@@ -353,7 +361,7 @@ def test_prd_enabled_uses_sql_service_and_keeps_public_contract(
 
     assert response.status_code == 200
     assert service.calls == [("0101", 2025, 9)]
-    assert set(response.json()) == {"periodo", "filial", "linhas", "quantidade"}
+    assert set(response.json()) == {"periodo", "filial", "linhas", "quantidade", "pagoLiquido", "pago", "aPagar", "total"}
 
 
 def test_gestor_rejects_invalid_data_environment() -> None:

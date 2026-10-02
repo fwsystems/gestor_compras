@@ -50,9 +50,11 @@ def sample_response() -> GestorResponse:
                 limite_original=Decimal("1000.00"),
                 saldo_previsto=Decimal("850.00"),
                 saldo_real=Decimal("1100.00"),
+                pago_liquido=Decimal("0"),
             )
         ],
         quantidade=1,
+        pago_liquido=Decimal("0"),
     )
 
 

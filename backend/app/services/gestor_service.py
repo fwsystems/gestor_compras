@@ -64,6 +64,7 @@ def get_gestor(
                     limite_original=limite_original,
                     saldo_previsto=limite_original - totals[GestorDetailType.PC_ABERTO] - totals[GestorDetailType.NF_ENTRADA],
                     saldo_real=limite_original - totals[GestorDetailType.NF_ENTRADA],
+                    pago_liquido=Decimal("0"),
                 )
             )
         linhas = filtered_rows
@@ -73,6 +74,7 @@ def get_gestor(
         filial=filial,
         linhas=linhas,
         quantidade=len(linhas),
+        pago_liquido=Decimal("0"),
     )
 
 

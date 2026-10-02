@@ -26,7 +26,10 @@ export function DashboardPage() {
   const { data, error, isLoading, reload } = useGestor(period, DEFAULT_GESTOR_BRANCH, environment, interval)
   const timeline = useGestorTimeline(period, DEFAULT_GESTOR_BRANCH, environment)
   const navigation = getGestorPeriodNavigation(period, environment)
-  const totals = summarizeGestorRows(data?.linhas ?? [])
+  // data.pagoLiquido remains a compatibility alias; the block uses pago/aPagar/total.
+  const totals = data === null
+    ? summarizeGestorRows([])
+    : summarizeGestorRows(data.linhas, data.pago, data.aPagar, data.total)
   const move = (direction: -1 | 1) => {
     if (isMonthlyGranularity(granularity)) {
       const next = direction === -1 ? navigation.previous : navigation.next

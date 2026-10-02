@@ -394,3 +394,45 @@ Loading, erro, retry, botão fechar, `Escape`, foco inicial e restauração de f
 Validação técnica final: frontend **53 verificações de período + 19 de NF + 22 de contingências + 26 específicas da ET-027**; lint e build aprovados. O smoke DEV pelo proxy validou os quatro tipos com quantidade, total e soma compatíveis com o consolidado, sem consulta real HML/PRD. A suíte backend não foi reexecutada porque o backend não mudou e permanece no último estado aprovado de **273/273**. O acesso LAN foi preservado em `http://10.211.2.67:5193`.
 
 **PENDENTE DE VALIDAÇÃO VISUAL MANUAL:** nenhum navegador estava conectado à automação para inspecionar cabeçalho, resumo, sticky header e overflow dos quatro tipos. A ET-028 foi concluída depois como estrutura de granularidade; não iniciar ET-029 automaticamente.
+
+## 28. ET-038/039 — Bloco Pagamentos
+
+O Dashboard exibe o bloco `Pagamentos`, substituindo o card `Compromisso Líquido`, sem alterar a tela principal do Gestor nem as fórmulas existentes. O contrato de `GET /api/gestor` mantém somente o agregado `pagoLiquido`; detalhes físicos da SE5 não são expostos. O frontend calcula `A Pagar = nfEntrada + pcAberto` e `Total = pagoLiquido + A Pagar` a partir das mesmas rows e do total retornados pela API.
+
+## 29. ET-040 — Relatórios / Consumo por Natureza
+
+O menu `Relatórios` foi habilitado e passou a apontar para `/relatorios`, com o primeiro relatório em `/relatorios/consumo-por-natureza`. A tela reutiliza `useGestor`, os seletores de ambiente, período, granularidade e Natureza, além das mesmas regras de Limite Original, PC, NF, saldos e percentual do Gestor. O relatório exibe somente as rows consolidadas retornadas para o período selecionado.
+
+`GestorRow` passou a carregar `pagoLiquido` por Natureza. O `GestorSqlService` faz uma única consulta ao `PagoLiquidoRepository`, associa os resultados aos códigos presentes nas rows e calcula o agregado como `SUM(row.pagoLiquido)`, preservando a invariância com `GestorResponse.pagoLiquido`. A tabela calcula `A Pagar = NF Entrada + PC em aberto` e apresenta Limite Original, PC, NF, Pago, A Pagar, Saldos e `% Consumido`, com ordenação local e exportação CSV/XLSX somente das linhas exibidas.
+
+A versão visual de fallback do frontend foi atualizada para `v0.9.0`; não houve alteração de dependências, regras financeiras existentes ou infraestrutura. A validação automatizada foi concluída; smoke PRD permanece pendente enquanto a conexão local ao SQL Server não estiver disponível.
+
+## 30. ET-041 — Relatório PC em Aberto
+
+O menu Relatórios ganhou o card e a rota `/relatorios/pc-em-aberto`. A página reutiliza `useGestor`, os seletores de ambiente/período/granularidade e o endpoint de detalhamento já existente para `pc_aberto`, sem criar regra financeira ou consulta paralela. O detalhamento utiliza `PcAbertoRepository.list_pc_aberto_details`, que mantém a mesma elegibilidade de `SZN`/`SC7` e o enriquecimento `SC7` + `SA2` ativa.
+
+Como o contrato homologado atual fornece somente Natureza, pedido, fornecedor, nome do fornecedor, vencimento e valor, esses são os campos exibidos e exportados. Item, produto, descrição do produto, emissão e quantidade não foram inventados. O relatório filtra somente Naturezas presentes nas rows consolidadas, evita duplicidade usando cada registro de detalhe uma vez, soma o valor das linhas filtradas e oferece ordenação, CSV e XLSX. Setembro/2026 pode retornar zero por ter PC em aberto consolidado igual a zero; a validação de linhas reais depende de um período PRD com PC positivo.
+
+O novo `PagoLiquidoRepository` lê a tabela física `SE5` resolvida por `DB_PROTHEUS_TABLE_SUFFIX`, agrupando `E5_NATUREZ` no intervalo inclusivo de `E5_DATA`. Entram somente `E5_RECPAG='P'` com `E5_TIPODOC='VL'`; `E5_RECPAG='R'` com `E5_TIPODOC='ES'` é subtraído. `CP`, `BA`, `JR`, `DC`, `R/VL`, demais combinações e registros com `D_E_L_E_T_ <> ''` não entram. O valor usado é `E5_VALOR`, normalizado para centavos com `Decimal` e `ROUND_HALF_UP`.
+
+O service consolida primeiro as rows do Gestor, consulta o repository usando a mesma filial, ano/mês e intervalo Mensal/Semanal/Diário, e soma somente os códigos de Natureza presentes nas rows consolidadas. Pagamentos, NF Entrada e PC em aberto fora do conjunto exibido não participam do bloco. Limite, Saldo Previsto, Saldo Real, Gasto Previsto, consumo e contingências não foram alterados.
+
+Validações automatizadas: suíte backend completa aprovada; validações frontend de período, granularidade, fórmula do card, detalhe, contingências e interface aprovadas; lint e build aprovados. O smoke PRD não foi executado porque a conexão local ao SQL Server permanece indisponível; nenhuma regra foi alterada para contornar essa pendência.
+
+## 31. ET-042 — Relatório NF Entrada
+
+Foi adicionada a rota `/relatorios/nf-entrada` e o respectivo card em `/relatorios`. A implementação reutiliza `useGestor`, `GET /api/gestor/details?tipo=nf_entrada` e o contrato de detalhamento existente, sem alterar SQL, regras financeiras ou backend. A tabela exibe Natureza, descrição, documento, parcela, fornecedor, nome, emissão, vencimento e valor; os filtros e a soma atuam somente sobre as linhas exibidas. CSV UTF-8 com BOM/separador `;` e XLSX mantêm o valor numérico.
+## 32. ET-043 — Relatório Naturezas Críticas
+
+Foi adicionada a rota `/relatorios/naturezas-criticas` e o card correspondente. A página reutiliza as rows de `GET /api/gestor`, sem criar query SQL ou endpoint adicional. A classificação é local e segue as regras existentes: consumo crítico quando NF Entrada/Limite Original > 100%, saldo previsto negativo quando menor que zero e Sem limite quando Limite Original é zero e NF Entrada é positiva. Uma Natureza permanece em uma única linha, mesmo com múltiplas situações. Mensal, semanal e diário reutilizam os seletores e intervalos já homologados.
+## 33. ET-044 — Relatório Evolução Mensal
+
+Foi adicionada a rota `/relatorios/evolucao-mensal` e o card correspondente. A página consulta cada mês necessário uma vez por `GET /api/gestor`, limita o intervalo a 24 meses e consolida no frontend as mesmas rows do Gestor. A tabela é a fonte do gráfico Recharts e dos cards do último mês; o filtro individual de Natureza recalcula os indicadores sem média de percentuais. Não houve alteração de backend, SQL, Pagamento/SE5 ou regras financeiras.
+
+## 34. ET — Pagamentos pelo critério homologado do Financeiro
+
+O `PagoLiquidoRepository` foi substituído pela leitura correlacionada de SE2/SE5/SEV. A classificação usa título pago quando existe movimento SE5 válido para tipos diferentes de `PR`, ou quando `E2_BAIXA` está preenchida, ou quando `E2_SALDO` é zero; títulos `PR` não são pagos apenas pela existência de movimento. A data usa `E2_VENCREA` para PA, `E2_BAIXA` para demais títulos pagos e `E2_VENCREA` para abertos. O valor respeita rateio SEV e os ajustes fiscais distintos para período corrente/passado e futuro.
+
+O service consulta primeiro as rows do Gestor e só associa pagamentos às Naturezas presentes nessa população. `pago`, `aPagar` e `total` por Natureza e no agregado são Decimal; o totalizador é `pago + aPagar`. A homologação PRD informada para setembro/2026 é PAGO R$ 1.180.614,09, A PAGAR R$ 0,00 e TOTAL R$ 1.180.614,09. O smoke PRD local permanece pendente quando a conexão SQL Server não está disponível; não houve contorno de infraestrutura.
+
+O relatório Consumo por Natureza foi ajustado para não usar `pagoLiquido`, nem recalcular A Pagar ou Total. A tabela, o resumo superior e as exportações usam `row.pago`, `row.aPagar`, `row.total` e, sem filtro, `response.pago`, `response.aPagar`, `response.total`. O frontend rejeita contrato ausente ou inconsistente, incluindo divergência entre rows e agregado. Setembro/2026 permanece homologado nos valores acima; Outubro é validado dinamicamente contra o backend.

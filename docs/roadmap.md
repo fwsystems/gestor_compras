@@ -78,6 +78,9 @@ As etapas posteriores estão registradas apenas para planejamento. As Sprints 0,
 - ET-035 Indicadores de Atenção — **concluída tecnicamente; quatro indicadores e detalhes locais no Dashboard**
 - ET-036 Evolução Temporal — **concluída tecnicamente; linha mensal de janeiro ao mês selecionado via endpoint timeline**
 - ET-037 Testes Automatizados — **concluída tecnicamente; cobertura consolidada de timeline, endpoint e validações frontend**
+- ET-038/039 Bloco Pagamentos — **implementado tecnicamente; repository SE5, agregação por Natureza, PAGO/A PAGAR/TOTAL e testes automatizados concluídos; smoke PRD pendente por indisponibilidade local do SQL Server**
+- ET-040 Relatórios / Consumo por Natureza — **implementada tecnicamente; menu, rotas, filtros reutilizados, Pago por Natureza, tabela, ordenação, CSV/XLSX e versão visual v0.9.0 concluídos; smoke PRD pendente por indisponibilidade local do SQL Server**
+- ET-041 Relatório PC em Aberto — **implementada tecnicamente; rota, detalhamento homologado, filtros, ordenação, fechamento, CSV/XLSX e testes concluídos; smoke PRD pendente por indisponibilidade local do SQL Server**
 
 ### Ajuste funcional posterior
 
@@ -93,8 +96,11 @@ As etapas posteriores estão registradas apenas para planejamento. As Sprints 0,
 - ET-040 Segurança e credenciais
 - ET-041 Logging
 - ET-042 Health check
+- ET-042A Relatório NF Entrada — rota, detalhamento homologado, filtros, ordenação e exportações
 - ET-043 Procedimento de deploy
 - ET-044 Plano de rollback
+
+- ET-043 Relatório Naturezas Críticas — classificação local das rows consolidadas, filtros, ordenação e exportações
 
 ## SPRINT 8 — Go Live
 
@@ -102,3 +108,7 @@ As etapas posteriores estão registradas apenas para planejamento. As Sprints 0,
 - ET-046 Validação pós-deploy
 - ET-047 Monitoramento inicial
 - ET-048 Encerramento da implantação
+ - ET-044 Relatório Evolução Mensal — histórico mensal, gráfico, tabela, filtro de Natureza e exportações
+
+- ET — Pagamentos Financeiro — classificação SE2/SE5/SEV homologada, compensações e períodos futuro/corrente implementados; contrato retorna `pago`, `aPagar` e `total` somente para Naturezas exibidas pelo Gestor. Smoke PRD local pendente conforme disponibilidade da conexão.
+- ET — Consumo por Natureza / novo contrato de pagamentos — relatório atualizado para `pago`, `aPagar` e `total`, incluindo Total na tabela e exportações, com invariâncias de rows/agregado e sem regra financeira duplicada no frontend.

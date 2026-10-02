@@ -33,6 +33,7 @@ def create_gestor_row(values: BaseGestorRow) -> GestorRow:
         limite_original=limite_original,
         saldo_previsto=limite_original - pc_aberto - nf_entrada,
         saldo_real=limite_original - nf_entrada,
+        pago_liquido=Decimal("0"),
     )
 
 

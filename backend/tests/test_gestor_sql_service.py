@@ -12,6 +12,7 @@ from app.repositories.limite_repository import AmbiguousLimiteError, LimiteRecor
 from app.repositories.natureza_repository import NaturezaRecord
 from app.repositories.nf_entrada_repository import NfEntradaDetailRecord, NfEntradaRecord
 from app.repositories.pc_aberto_repository import PcAbertoDetailRecord, PcAbertoRecord
+from app.repositories.pago_liquido_repository import PagoLiquidoRecord
 from app.schemas.gestor import GestorDetailType
 from app.services.gestor_sql_service import (
     DuplicateGestorNaturezaError,
@@ -54,6 +55,9 @@ class FakeRepository:
     def list_contingencias(self, filial: str, ano: int, mes: int) -> list[object]:
         return self._return((filial, ano, mes))
 
+    def list_pago_liquido(self, filial: str, ano: int, mes: int) -> list[object]:
+        return self._return((filial, ano, mes))
+
     def list_pc_aberto_details(
         self, filial: str, ano: int, mes: int, natureza: str
     ) -> list[object]:
@@ -85,6 +89,7 @@ def build_service(
     pcs: list[object] | None = None,
     nfs: list[object] | None = None,
     contingencias: list[object] | None = None,
+    pagos: list[object] | None = None,
     errors: dict[str, Exception] | None = None,
 ) -> tuple[GestorSqlService, dict[str, FakeRepository]]:
     errors = errors or {}
@@ -96,6 +101,7 @@ def build_service(
         "contingencia": FakeRepository(
             contingencias or [], errors.get("contingencia")
         ),
+        "pago": FakeRepository(pagos or [], errors.get("pago")),
     }
     service = GestorSqlService(
         natureza_repository=repositories["natureza"],  # type: ignore[arg-type]
@@ -103,6 +109,7 @@ def build_service(
         pc_aberto_repository=repositories["pc"],  # type: ignore[arg-type]
         nf_entrada_repository=repositories["nf"],  # type: ignore[arg-type]
         contingencia_repository=repositories["contingencia"],  # type: ignore[arg-type]
+        pago_liquido_repository=repositories["pago"],  # type: ignore[arg-type]
     )
     return service, repositories
 
@@ -136,6 +143,31 @@ def test_complete_deterministic_composition_and_pending_is_informational() -> No
     assert row.saldo_real == Decimal("900.00")
     assert row.contingencia_em_aprovacao == Decimal("500.00")
     assert response.quantidade == 1
+    assert response.pago_liquido == Decimal("0")
+
+
+def test_pago_liquido_is_summed_only_for_displayed_naturezas() -> None:
+    service, repositories = build_service(
+        naturezas=[NaturezaRecord("0010", "NATUREZA EXIBIDA")],
+        nfs=[NfEntradaRecord("0010", Decimal("100.00"))],
+        pcs=[PcAbertoRecord("0010", Decimal("250.00"))],
+        pagos=[
+            PagoLiquidoRecord("0010", Decimal("40.00"), Decimal("12.00"), Decimal("52.00")),
+            PagoLiquidoRecord("9999", Decimal("900.00")),
+        ],
+    )
+
+    response = service.get_gestor("0101", 2025, 9)
+
+    assert response.pago_liquido == Decimal("40.00")
+    assert response.linhas[0].pago_liquido == Decimal("40.00")
+    assert sum((row.pago_liquido for row in response.linhas), Decimal("0")) == response.pago_liquido
+    assert response.a_pagar == Decimal("12.00")
+    assert response.total == Decimal("52.00")
+    assert response.linhas[0].a_pagar == Decimal("12.00")
+    assert response.linhas[0].total == Decimal("52.00")
+    assert response.pago + response.a_pagar == response.total
+    assert repositories["pago"].calls == [("0101", 2025, 9)]
 
 
 def test_financial_union_is_sorted_and_sed_only_nature_is_omitted() -> None:

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Gestor de Compras">
+  <path fill="#155b86" d="M5 10.5A2.5 2.5 0 0 1 7.5 8h5.1l1.5-2h3.8l1.5 2h5.1a2.5 2.5 0 0 1 2.5 2.5V25a2.5 2.5 0 0 1-2.5 2.5h-16A2.5 2.5 0 0 1 5 25z"/>
+  <path fill="#eaf5fb" d="M5 13h22v4H5z"/>
+  <path fill="#eaf5fb" d="M13 15h6v3h-6z"/>
+  <path fill="#0d4164" d="M7.5 21h17v2h-17z" opacity=".35"/>
+</svg>

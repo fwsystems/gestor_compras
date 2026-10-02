@@ -8,6 +8,10 @@ export interface GestorRow {
   limiteOriginal: number
   saldoPrevisto: number
   saldoReal: number
+  pagoLiquido: number
+  pago: number
+  aPagar: number
+  total: number
 }
 
 export interface GestorPeriod {
@@ -20,6 +24,10 @@ export interface GestorResponse {
   filial: string
   linhas: GestorRow[]
   quantidade: number
+  pagoLiquido: number
+  pago: number
+  aPagar: number
+  total: number
 }
 
 export interface GestorTimelinePoint {

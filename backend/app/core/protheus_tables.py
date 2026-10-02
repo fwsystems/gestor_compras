@@ -3,9 +3,9 @@ from typing import Literal
 from app.core.config import Settings
 from app.core.database import DatabaseConfigurationError
 
-ProtheusTable = Literal["SA2", "SC7", "SE2", "SED", "SE7", "SEV", "SZN", "SZR"]
+ProtheusTable = Literal["SA2", "SC7", "SE2", "SE5", "SED", "SE7", "SEV", "SZN", "SZR"]
 _ALLOWED_TABLE_PREFIXES: frozenset[ProtheusTable] = frozenset(
-    {"SA2", "SC7", "SE2", "SED", "SE7", "SEV", "SZN", "SZR"}
+    {"SA2", "SC7", "SE2", "SE5", "SED", "SE7", "SEV", "SZN", "SZR"}
 )
 
 

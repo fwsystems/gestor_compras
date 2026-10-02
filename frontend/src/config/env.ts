@@ -38,7 +38,7 @@ export const env = Object.freeze({
   ),
   appVersion: requiredValue(
     import.meta.env.VITE_APP_VERSION,
-    '0.1.0',
+    '0.9.0',
     'VITE_APP_VERSION',
   ),
   appEnvironment: parseEnvironment(import.meta.env.VITE_APP_ENV),

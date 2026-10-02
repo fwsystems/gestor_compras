@@ -84,6 +84,12 @@ A ET-036 adicionou a Evolução Temporal mensal no Dashboard, alimentada por `/a
 
 A ET-037 consolidou os testes automatizados do Gestor e Dashboard, cobrindo o contrato, cancelamento e séries da timeline, além dos erros e validações do endpoint.
 
+A ET-038/039 adicionou ao Dashboard o bloco **Pagamentos**. `PAGO` usa `pagoLiquido` por Natureza na SE5 física resolvida pelo sufixo do ambiente, com movimentos `P/VL` menos estornos `R/ES`, `E5_DATA` no intervalo selecionado e `D_E_L_E_T_=''`. `A PAGAR` é `NF Entrada + PC em aberto` das rows consolidadas; `TOTAL` é `PAGO + A PAGAR`. Os três valores usam exclusivamente as Naturezas presentes nas rows do Gestor; contingências e as demais fórmulas permanecem inalteradas.
+
+A ET-040 habilitou **Relatórios** e o relatório **Consumo por Natureza** em `/relatorios/consumo-por-natureza`, com os mesmos filtros de ambiente, período, granularidade e Natureza do Gestor. O contrato das rows passou a incluir `pagoLiquido`, preservando o agregado `pagoLiquido` da resposta e sua invariância com a soma das rows. A versão visual exibida no frontend passou para `v0.9.0`.
+
+A ET-041 adicionou o relatório **PC em Aberto** em `/relatorios/pc-em-aberto`, reutilizando o detalhamento homologado de PC do Gestor (`PcAbertoRepository`/`GestorSqlService`), com filtros de Natureza, fornecedor e pedido, ordenação local e exportação CSV/XLSX. Os campos disponíveis são Natureza, descrição, pedido, fornecedor, nome do fornecedor, vencimento e valor em aberto; item, produto, emissão e quantidade não fazem parte do contrato atual.
+
 ## Execução
 
 ### Backend
@@ -168,3 +174,16 @@ O `.env` local continua sendo HML. A ET-021D.2 criou `.env.prd` como configuraç
 7. [docs/architecture.md](docs/architecture.md), [docs/environments.md](docs/environments.md), [docs/api-contracts.md](docs/api-contracts.md) e [docs/conventions.md](docs/conventions.md) — arquitetura, operação e contratos.
 
 Credenciais reais pertencem somente aos arquivos `.env` locais, que permanecem ignorados. Os `.env.example` contêm apenas placeholders seguros.
+
+### ET — Regra Financeiro para pagamentos
+
+O bloco de pagamentos usa a classificação homologada do Financeiro sobre SE2, SE5 e SEV. A chave SE2/SE5 é filial, prefixo, número, parcela, fornecedor e loja; movimentos cancelados, `JR` e `DC` são ignorados. Compensações `CMP`, `CEC` e `DAC` não participam das linhas corrente/passada e excluem integralmente o título em período futuro. O contrato de `GET /api/gestor` retorna `pago`, `aPagar` e `total` por Natureza, sempre após a interseção com as rows consolidadas do Gestor.
+
+O relatório Consumo por Natureza consome exclusivamente esses campos (`pago`, `aPagar` e `total`) nas rows e no agregado da resposta. A tabela e as exportações CSV/XLSX incluem Total, e os totais filtrados usam somente as rows visíveis.
+
+### ET-042 — Relatório NF Entrada
+
+O relatório gerencial está disponível em `/relatorios/nf-entrada`, reutilizando o detalhamento homologado de NF Entrada do Gestor (`SE2`/`SEV`, por `E2_VENCTO`). A página usa as mesmas rows, ambiente, filial, período e granularidade do Gestor, com filtros locais de Natureza, fornecedor e documento, ordenação e exportação CSV/XLSX.
+### ET-044 — Relatório Evolução Mensal
+
+O relatório está disponível em `/relatorios/evolucao-mensal`. Ele consulta os meses individualmente pelo contrato existente de `GET /api/gestor`, com intervalo máximo de 24 meses, filtro opcional de Natureza, tabela, gráfico Recharts e exportações CSV/XLSX. Os indicadores reutilizam as fórmulas homologadas do Gestor, sem Pagamento/SE5 ou Contingência.

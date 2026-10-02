@@ -2,7 +2,9 @@ import { formatCurrency } from '../../utils/currency'
 import type { GestorDashboardTotals } from '../../utils/dashboard'
 import { DashboardIcon, type DashboardIconName } from './DashboardIcon'
 
-const cards: { label: string; field: keyof Omit<GestorDashboardTotals, 'percentualConsumido'>; icon: DashboardIconName; tone: string }[] = [
+type StandardCardField = keyof Omit<GestorDashboardTotals, 'percentualConsumido' | 'pagoLiquido' | 'aPagar' | 'totalPagamentos'>
+
+const cards: { label: string; field: StandardCardField; icon: DashboardIconName; tone: string }[] = [
   { label: 'Limite Original', field: 'limiteOriginal', icon: 'wallet', tone: 'blue' },
   { label: 'PC em aberto', field: 'pcAberto', icon: 'clipboard', tone: 'orange' },
   { label: 'NF Entrada', field: 'nfEntrada', icon: 'cart', tone: 'green' },
@@ -17,6 +19,21 @@ export function DashboardCards({ totals }: { totals: GestorDashboardTotals }) {
     {cards.map((card) => <article className={`dashboard-card dashboard-card-${card.tone}${totals[card.field] < 0 ? ' dashboard-card-negative' : ''}`} key={card.field}>
       <span className="dashboard-icon"><DashboardIcon name={card.icon} /></span><div><p>{card.label}</p><strong>{formatCurrency(totals[card.field])}</strong></div>
     </article>)}
+    <article className="dashboard-card dashboard-payments" aria-label="Pagamentos">
+      <span className="dashboard-icon"><DashboardIcon name="wallet" /></span>
+      <div className="dashboard-payments-content">
+        <p className="dashboard-payments-title">Pagamentos</p>
+        <div className={`dashboard-payment-row${totals.pagoLiquido < 0 ? ' dashboard-card-negative' : ''}`}>
+          <span>Pago</span><strong>{formatCurrency(totals.pagoLiquido)}</strong>
+        </div>
+        <div className="dashboard-payment-row" title="NF Entrada + PC em aberto">
+          <span>A pagar</span><strong>{formatCurrency(totals.aPagar)}</strong>
+        </div>
+        <div className={`dashboard-payment-row dashboard-payment-total${totals.totalPagamentos < 0 ? ' dashboard-card-negative' : ''}`}>
+          <span>Total</span><strong>{formatCurrency(totals.totalPagamentos)}</strong>
+        </div>
+      </div>
+    </article>
     <article className="dashboard-card dashboard-card-teal">
       <span className="dashboard-icon"><DashboardIcon name="gauge" /></span><div><p>% Consumido</p><strong>{totals.percentualConsumido === null ? '—' : `${totals.percentualConsumido.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}</strong></div>
     </article>

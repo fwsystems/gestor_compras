@@ -22,6 +22,7 @@ from app.repositories.pc_aberto_repository import (
     PcAbertoRecord,
     PcAbertoRepository,
 )
+from app.repositories.pago_liquido_repository import PagoLiquidoRecord, PagoLiquidoRepository
 from app.schemas.gestor import (
     GestorContingenciaDetailRecord,
     GestorDetailResponse,
@@ -97,10 +98,11 @@ class GestorSqlRepositories:
     pc_aberto: PcAbertoRepository
     nf_entrada: NfEntradaRepository
     contingencia: ContingenciaRepository
+    pago_liquido: PagoLiquidoRepository
 
 
 class GestorSqlService:
-    """Compose Gestor rows from the five read-only batch repositories."""
+    """Compose Gestor rows from the six read-only batch repositories."""
 
     def __init__(
         self,
@@ -110,6 +112,7 @@ class GestorSqlService:
         pc_aberto_repository: PcAbertoRepository | None = None,
         nf_entrada_repository: NfEntradaRepository | None = None,
         contingencia_repository: ContingenciaRepository | None = None,
+        pago_liquido_repository: PagoLiquidoRepository | None = None,
     ) -> None:
         self._repositories = GestorSqlRepositories(
             natureza=natureza_repository or NaturezaRepository(settings),
@@ -117,6 +120,7 @@ class GestorSqlService:
             pc_aberto=pc_aberto_repository or PcAbertoRepository(settings),
             nf_entrada=nf_entrada_repository or NfEntradaRepository(settings),
             contingencia=contingencia_repository or ContingenciaRepository(settings),
+            pago_liquido=pago_liquido_repository or PagoLiquidoRepository(settings),
         )
 
     def get_gestor(
@@ -210,14 +214,49 @@ class GestorSqlService:
                     limite_original=limite_original,
                     saldo_previsto=limite_original - pc_aberto - nf_entrada,
                     saldo_real=limite_original - nf_entrada,
+                    pago_liquido=ZERO,
+                    pago=ZERO,
+                    a_pagar=ZERO,
+                    total=ZERO,
                 )
             )
+
+        pago_liquido = ZERO
+        a_pagar = ZERO
+        total_pagamentos = ZERO
+        if linhas:
+            pagamentos_by_natureza = _index_financial_records(
+                self._repositories.pago_liquido.list_pago_liquido(
+                    normalized_branch, ano, mes, **self._interval_kwargs(interval)
+                ),
+                "PagoLiquidoRepository",
+            )
+            base_linhas = linhas
+            linhas = []
+            for row in base_linhas:
+                pagamento = pagamentos_by_natureza.get(
+                    row.natureza_codigo,
+                    PagoLiquidoRecord(row.natureza_codigo, ZERO),
+                )
+                linhas.append(row.model_copy(update={
+                    "pago_liquido": pagamento.pago,
+                    "pago": pagamento.pago,
+                    "a_pagar": pagamento.a_pagar,
+                    "total": pagamento.total,
+                }))
+            pago_liquido = sum((row.pago_liquido for row in linhas), ZERO)
+            a_pagar = sum((row.a_pagar for row in linhas), ZERO)
+            total_pagamentos = sum((row.total for row in linhas), ZERO)
 
         return GestorResponse(
             periodo=period,
             filial=normalized_branch,
             linhas=linhas,
             quantidade=len(linhas),
+            pago_liquido=pago_liquido,
+            pago=pago_liquido,
+            a_pagar=a_pagar,
+            total=total_pagamentos,
         )
 
     def get_details(

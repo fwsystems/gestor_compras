@@ -45,9 +45,11 @@ def response() -> GestorResponse:
                 limite_original=Decimal("10000.00"),
                 saldo_previsto=Decimal("3270.00"),
                 saldo_real=Decimal("9900.00"),
+                pago_liquido=Decimal("0"),
             )
         ],
         quantidade=1,
+        pago_liquido=Decimal("0"),
     )
 
 

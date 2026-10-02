@@ -8,10 +8,13 @@ export interface GestorDashboardTotals {
   contingenciaEmAprovacao: number
   saldoPrevisto: number
   saldoReal: number
+  pagoLiquido: number
+  aPagar: number
+  totalPagamentos: number
   percentualConsumido: number | null
 }
 
-export function summarizeGestorRows(rows: readonly GestorRow[]): GestorDashboardTotals {
+export function summarizeGestorRows(rows: readonly GestorRow[], pagoLiquido = 0, aPagarOverride?: number, totalOverride?: number): GestorDashboardTotals {
   const totals = rows.reduce((current, row) => ({
     limiteOriginal: current.limiteOriginal + row.limiteOriginal,
     pcAberto: current.pcAberto + row.pcAberto,
@@ -23,6 +26,9 @@ export function summarizeGestorRows(rows: readonly GestorRow[]): GestorDashboard
   }), { limiteOriginal: 0, pcAberto: 0, nfEntrada: 0, contingenciaOk: 0, contingenciaEmAprovacao: 0, saldoPrevisto: 0, saldoReal: 0 })
   return {
     ...totals,
+    pagoLiquido,
+    aPagar: aPagarOverride ?? totals.nfEntrada + totals.pcAberto,
+    totalPagamentos: totalOverride ?? pagoLiquido + (aPagarOverride ?? totals.nfEntrada + totals.pcAberto),
     percentualConsumido: totals.limiteOriginal > 0 ? totals.nfEntrada / totals.limiteOriginal * 100 : null,
   }
 }

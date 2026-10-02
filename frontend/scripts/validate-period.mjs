@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 const vite = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
+  configLoader: 'runner',
 })
 
 const equal = (actual, expected) =>
@@ -19,6 +20,7 @@ try {
   const gestorDerived = await vite.ssrLoadModule('/src/utils/gestorDerived.ts')
   const dashboard = await vite.ssrLoadModule('/src/utils/dashboard.ts')
   const budgetUsage = await vite.ssrLoadModule('/src/utils/budgetUsage.ts')
+  const reportExport = await vite.ssrLoadModule('/src/utils/consumptionReportExport.ts')
   const allAvailable = {
     default: 'prd',
     environments: [
@@ -200,6 +202,18 @@ try {
     throw new Error('indicadores do dashboard inválidos')
   }
   console.log('OK indicadores do dashboard reutilizam consolidados e evitam divisão por zero')
+  const paidDashboardTotals = dashboard.summarizeGestorRows(sortableRows, 7)
+  if (paidDashboardTotals.pagoLiquido !== 7 || paidDashboardTotals.aPagar !== 16 || paidDashboardTotals.totalPagamentos !== 23) {
+    throw new Error('Bloco Pagamentos não fecha com Pago, A Pagar e Total')
+  }
+  console.log('OK Bloco Pagamentos fecha matematicamente e aceita pagamento líquido')
+  const dashboardCardsSource = await readFile(new URL('../src/components/dashboard/DashboardCards.tsx', import.meta.url), 'utf8')
+  const dashboardPageSource = await readFile(new URL('../src/pages/DashboardPage.tsx', import.meta.url), 'utf8')
+  const gestorTypesSource = await readFile(new URL('../src/types/gestor.ts', import.meta.url), 'utf8')
+  if (dashboardCardsSource.includes('Compromisso Líquido') || dashboardCardsSource.includes('compromissoLiquido') || !dashboardCardsSource.includes('Pagamentos') || !dashboardCardsSource.includes('A pagar') || !dashboardCardsSource.includes('NF Entrada + PC em aberto') || !dashboardPageSource.includes('data.pagoLiquido') || !gestorTypesSource.includes('pagoLiquido: number')) {
+    throw new Error('Bloco Pagamentos não está conectado ao contrato do Gestor')
+  }
+  console.log('OK bloco Pagamentos usa contrato, tooltip e padrão visual do Dashboard')
   const semLimite = budgetUsage.calculateBudgetUsage(30, 5, 0)
   const limiteZerado = budgetUsage.calculateBudgetUsage(0, 0, 0)
   if (semLimite.label !== 'Sem limite' || semLimite.percentage !== null || !Number.isFinite(semLimite.visualPercentage) || limiteZerado.percentage !== 0) {
@@ -221,6 +235,60 @@ try {
     throw new Error('indicadores de atenção inválidos')
   }
   console.log('OK atenção gerencial trata Sem limite, negativos, filtros e ordenações localmente')
+  const appSource = await readFile(new URL('../src/App.tsx', import.meta.url), 'utf8')
+  const sidebarSource = await readFile(new URL('../src/components/layout/Sidebar.tsx', import.meta.url), 'utf8')
+  const reportPageSource = await readFile(new URL('../src/pages/ConsumptionByNaturePage.tsx', import.meta.url), 'utf8')
+  const reportCsv = reportExport.createConsumptionReportCsv([{
+    ...sortableRows[0],
+    pago: 7,
+    aPagar: 16,
+    total: 23,
+    percentualConsumido: 25,
+  }])
+  const gestorServiceSource = await readFile(new URL('../src/services/gestorService.ts', import.meta.url), 'utf8')
+  if (!appSource.includes('relatorios/consumo-por-natureza') || !sidebarSource.includes('to="/relatorios"') || !reportPageSource.includes("field: 'pago'") || !reportPageSource.includes("field: 'aPagar'") || !reportPageSource.includes("field: 'total'") || !reportPageSource.includes('percentualConsumido') || !reportCsv.includes('Pago') || !reportCsv.includes('A Pagar') || !reportCsv.includes('Total') || !reportCsv.includes('7,00') || !gestorServiceSource.includes('pagamento válido para a Natureza')) {
+    throw new Error('RelatÃ³rio Consumo por Natureza nÃ£o estÃ¡ integrado')
+  }
+  console.log('OK RelatÃ³rio Consumo por Natureza, contrato por Natureza e CSV')
+  const pcReportPageSource = await readFile(new URL('../src/pages/PcAbertoReportPage.tsx', import.meta.url), 'utf8')
+  const reportsPageSource = await readFile(new URL('../src/pages/ReportsPage.tsx', import.meta.url), 'utf8')
+  const pcExport = await vite.ssrLoadModule('/src/utils/pcAbertoReportExport.ts')
+  const pcCsv = pcExport.createPcAbertoCsv([{ naturezaCodigo: '001', naturezaDescricao: 'Teste', pedido: '0001', fornecedor: 'F01', fornecedorNome: 'Fornecedor', vencimento: '20250930', valor: 12.5 }])
+  if (!appSource.includes('relatorios/pc-em-aberto') || !reportsPageSource.includes('PC em Aberto') || !pcReportPageSource.includes('listagem') && !pcReportPageSource.includes('Pedidos de compra em aberto') || !pcReportPageSource.includes('fornecedor') || !pcReportPageSource.includes('orderSearch') || !pcCsv.includes('Descri\u00e7\u00e3o da Natureza') || !pcCsv.includes('12,50')) {
+    throw new Error('RelatÃ³rio PC em Aberto nÃ£o estÃ¡ integrado')
+  }
+  console.log('OK RelatÃ³rio PC em Aberto, filtros, contrato e CSV')
+  const nfReportPageSource = await readFile(new URL('../src/pages/NfEntradaReportPage.tsx', import.meta.url), 'utf8')
+  const nfExport = await vite.ssrLoadModule('/src/utils/nfEntradaReportExport.ts')
+  const nfCsv = nfExport.createNfEntradaCsv([{ naturezaCodigo: '001', naturezaDescricao: 'Teste', documento: 'NF1', parcela: '001', fornecedor: 'F01', fornecedorNome: 'Fornecedor', emissao: '20250901', vencimento: '20250930', valor: 12.5 }])
+  if (!appSource.includes('relatorios/nf-entrada') || !reportsPageSource.includes('NF Entrada') || !nfReportPageSource.includes('Documento') || !nfReportPageSource.includes('documentSearch') || !nfReportPageSource.includes('emissao') || !nfCsv.includes('Descrição da Natureza') || !nfCsv.includes('Emissão') || !nfCsv.includes('12,50')) {
+    throw new Error('RelatÃ³rio NF Entrada nÃ£o estÃ¡ integrado')
+  }
+  console.log('OK RelatÃ³rio NF Entrada, filtros, contrato e CSV')
+  const criticalReportPageSource = await readFile(new URL('../src/pages/CriticalNaturesReportPage.tsx', import.meta.url), 'utf8')
+  const criticalExport = await vite.ssrLoadModule('/src/utils/criticalNaturesReportExport.ts')
+  const criticalCsv = criticalExport.createCriticalNaturesCsv([{ naturezaCodigo: '001', naturezaDescricao: 'Teste', situacao: 'Consumo crítico | Saldo previsto negativo', limiteOriginal: 10, pcAberto: 2, nfEntrada: 12, gastoPrevisto: 14, saldoPrevisto: -4, saldoReal: -2, percentualConsumido: 120 }])
+  if (!appSource.includes('relatorios/naturezas-criticas') || !reportsPageSource.includes('Naturezas Cr') || !criticalReportPageSource.includes('Saldo previsto negativo') || !criticalReportPageSource.includes('criticality') || !criticalReportPageSource.includes('Sem limite') || !criticalReportPageSource.includes('saldoPrevisto') || !criticalCsv.includes('Descrição da Natureza') || !criticalCsv.includes('Situação') || !criticalCsv.includes('120,00')) {
+    throw new Error('RelatÃ³rio Naturezas CrÃ­ticas nÃ£o estÃ¡ integrado')
+  }
+  console.log('OK RelatÃ³rio Naturezas CrÃ­ticas, criticidades, filtros e CSV')
+  const criticalRules = await vite.ssrLoadModule('/src/utils/criticalNatures.ts')
+  const criticalBase = { naturezaCodigo: '001', naturezaDescricao: 'Teste', pcAberto: 2, contingenciaOk: 99, contingenciaEmAprovacao: 99, saldoReal: -2, pagoLiquido: 0 }
+  const multipleCriticalities = criticalRules.classifyCriticalNature({ ...criticalBase, limiteOriginal: 10, nfEntrada: 12, saldoPrevisto: -4 })
+  const noLimit = criticalRules.classifyCriticalNature({ ...criticalBase, limiteOriginal: 0, nfEntrada: 5, saldoPrevisto: -5 })
+  const regular = criticalRules.classifyCriticalNature({ ...criticalBase, limiteOriginal: 20, nfEntrada: 5, saldoPrevisto: 13, saldoReal: 15 })
+  if (!multipleCriticalities || multipleCriticalities.types.join('|') !== 'consumo|saldo' || multipleCriticalities.line.gastoPrevisto !== 14 || multipleCriticalities.line.percentualConsumido !== 120 || !noLimit || noLimit.types.join('|') !== 'saldo|sem-limite' || noLimit.line.percentualConsumido !== null || regular !== null) {
+    throw new Error('Regras de criticidade nÃ£o fecham com as regras homologadas')
+  }
+  console.log('OK criticidades mÃºltiplas, Sem limite, fÃ³rmulas e exclusÃ£o de contingÃªncia')
+  const monthlyReportPageSource = await readFile(new URL('../src/pages/MonthlyEvolutionReportPage.tsx', import.meta.url), 'utf8')
+  const monthlyHookSource = await readFile(new URL('../src/hooks/useGestorMonthlyEvolution.ts', import.meta.url), 'utf8')
+  const monthlyExport = await vite.ssrLoadModule('/src/utils/monthlyEvolutionExport.ts')
+  const monthlyCsv = monthlyExport.createMonthlyEvolutionCsv([{ mes: 'Setembro / 2026', limiteOriginal: 10, pcAberto: 2, nfEntrada: 12, gastoPrevisto: 14, saldoPrevisto: -4, saldoReal: -2, percentualConsumido: 120 }])
+  if (!appSource.includes('relatorios/evolucao-mensal') || !reportsPageSource.includes('Evolu') || !monthlyReportPageSource.includes('M&ecirc;s inicial') || !monthlyReportPageSource.includes('saldoPrevisto') || !monthlyReportPageSource.includes('ResponsiveContainer') || !monthlyReportPageSource.includes('Saldo Real') || !monthlyHookSource.includes('uniquePeriods') || !monthlyHookSource.includes('Promise.all') || !monthlyCsv.includes('M\u00eas') || !monthlyCsv.includes('120,00')) {
+    throw new Error('RelatÃ³rio EvoluÃ§Ã£o Mensal nÃ£o estÃ¡ integrado')
+  }
+  console.log('OK RelatÃ³rio EvoluÃ§Ã£o Mensal, perÃ­odo mÃ¡ximo, grÃ¡fico, tabela e CSV')
 } finally {
   await vite.close()
 }
